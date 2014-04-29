@@ -36,7 +36,7 @@ We can look at several use cases for data storage
 	A cloud storage provider is likely to serve many users. With the internet being much slower than an internal network, the end users should not make full data verification themselves. This leaves byte level verification as an exercise for the provider to provide a reliable service. What TTL does is to free the provider from maintaining data structures to link users and data blobs. The user is also free to index data blobs without worrying about server compatibility and privacy leakages.
 
 
-## Problem with time. 
+## Problem with time
 
 Any time based system functions depends on our definition of time. Without careful consideration, TTL based garbage collection would not work properly if time is errors, for example a time server that’s configured a few years ahead could lead a cluster to consider all it’s contents to be outdated.
 

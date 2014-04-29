@@ -4,6 +4,7 @@ FenSan
 Dispersed Data Cache Store
 
 Dispersed VS Distributed
+----
 
 - Dispersed implies less organization, and more organic and natrual goodness.
 
@@ -14,5 +15,12 @@ Dispersed VS Distributed
 - Unlike most distributed systems, FenSan can not slipt-brain, by not sharing brains in anyway. Each server exits on it's own, with ablilty to support all native operations without outside contact. Only need to contact other servers when it need new information. As such, there is no global state, only local state on the server level. It pushes all data merging to the application level. 
 
 - FenSan is disperse in Chinese PinYin, FenBu (distribute) sounds stupid and overly generic, comming up with good names is hard.
+
+### Clear Separation Between Static and Dynamic Content As First Class Citizens
+
+Existing systems that only support static content requires an external channel for updates, while systems that treat content as dynamic need to kludge on a layer of modification metadata to enable any caching; causing the while know problem of cache invlidation.
+
+FenSan support static content distribution using a sha256 derived hash tree to create a content addresable database. Dynamic content is then build on top of static content using filtering (such as checking a public key sign) and ordering (such as version number).
+
 
 
