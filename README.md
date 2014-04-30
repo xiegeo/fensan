@@ -16,11 +16,15 @@ Dispersed VS Distributed
 
 - FenSan is disperse in Chinese PinYin, FenBu (distribute) sounds stupid and overly generic, comming up with good names is hard.
 
-### Clear Separation Between Static and Dynamic Content As First Class Citizens
+### Static and Dynamic Content
 
 Existing systems that only support static content requires an external channel for updates, while systems that treat content as dynamic need to kludge on a layer of modification metadata to enable any caching; causing the while know problem of cache invlidation.
 
-FenSan support static content distribution using a sha256 derived hash tree to create a content addresable database. Dynamic content is then build on top of static content using filtering (such as checking a public key sign) and ordering (such as version number).
+FenSan support static content distribution using a sha256 derived hash tree to create a content addresable database that prevents modification, from any attacker. Dynamic content is then build on top of static content using filtering (such as checking a public key sign) and ordering (such as version number).
+
+### Public and Private Content
+
+From the protcol level, the only information that need to stay in plain text are dynamic content headers such as those stated above to aid in the effect updating of dynamic content. In actural usage, we something want content to be public or private. 
 
 
 
