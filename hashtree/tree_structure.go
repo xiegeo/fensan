@@ -19,19 +19,6 @@ type Bytes int64
 //Nodes is signed to allow representation of deltas.
 type Nodes int
 
-//Nodes returns the number of nodes on the
-//bottom level of a hash tree covering len
-//bytes of data.
-//Use of HashTree.Nodes is prefered for padding,
-//so it's made private
-func nodes(len Bytes) Nodes {
-	return nodes2(len, HashSize)
-}
-
-func nodes2(len Bytes, blockSize Bytes) Nodes {
-	return Nodes((len-1)/blockSize) + 1
-}
-
 //Levels return the number of Levels (1 or more) of a hash
 //tree with n leaf nodes
 func Levels(n Nodes) Level {

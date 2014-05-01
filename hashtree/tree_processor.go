@@ -17,10 +17,6 @@ type H256 [8]uint32 //the internal hash
 //FromBytes create a hash from bytes
 //bytes must have a length of HashSize (32)
 func FromBytes(bytes []byte) *H256 {
-	return fromBytes(bytes)
-}
-
-func fromBytes(bytes []byte) *H256 {
 	var h H256
 	for i := 0; i < 8; i++ {
 		j := i * 4
@@ -32,9 +28,6 @@ func fromBytes(bytes []byte) *H256 {
 //ToBytes reads out bytes from a hash
 //bytes will have a length of HashSize (32)
 func (h *H256) ToBytes() []byte {
-	return h.toBytes()
-}
-func (h *H256) toBytes() []byte {
 	bytes := make([]byte, 32)
 	for i, s := range h {
 		bytes[i*4] = byte(s >> 24)
@@ -135,7 +128,7 @@ func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 		}
 		p = p[HashSize-d.xn:]
 		d.xn = 0
-		d.writeStack(fromBytes(d.x[:]), 0)
+		d.writeStack(FromBytes(d.x[:]), 0)
 	}
 	if len(p) > 0 {
 		for i := 0; i < len(p); i++ {
@@ -193,7 +186,7 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 		d.listenInner(right, i+1)
 	}
 
-	return append(in, right.toBytes()...)
+	return append(in, right.ToBytes()...)
 }
 
 //ZeroPad32bytes pads with 0 or more of bytes 0x00.

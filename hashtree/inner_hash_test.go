@@ -107,7 +107,7 @@ func testInnerHashListener(inner [][]int32, t *testing.T) {
 	c.SetInnerHashListener(listener)
 	for _, n := range inner[0] {
 		data := H256{uint32(n)}
-		c.Write(data.toBytes())
+		c.Write(data.ToBytes())
 	}
 	c.Sum(nil)
 

@@ -17,8 +17,8 @@ func TestTreeOrder(t *testing.T) {
 	for i := int32(0); i < 100; i++ {
 		n := i // n is the value of the i'th input, any function of i should pass test
 		data := H256{uint32(n)}
-		c.Write(data.toBytes())
-		ans := int32(fromBytes(c.Sum(nil))[0])
+		c.Write(data.ToBytes())
+		ans := int32(FromBytes(c.Sum(nil))[0])
 		if evenBits(uint32(i)) {
 			expect += n
 		} else {

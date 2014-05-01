@@ -19,8 +19,16 @@ type fileDigest struct {
 	tree          CopyableHashTree // the digest used for inner and root nodes
 }
 
-// Create the standard file tree hash using leaf blocks of 1kB and sha256,
-// and inner hash using sha256 without padding.
+type fileDigestSample struct {
+	HashTree
+}
+
+//I is a sample of the standared HashTree, to make some methods accessable
+//without creating a new HashTree. Do not use it's write or sum functions.
+var I = fileDigestSample{NewFile()}
+
+// Create the standard file tree hash using leaf blocks of LeafBlockSize (1kB)
+// and "crypto/sha256", and inner hash using sha256 without padding.
 func NewFile() HashTree {
 	return NewFile2(LeafBlockSize, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
 }
@@ -37,10 +45,10 @@ func NewFile2(leafBlockSize Bytes, leaf hash.Hash, tree CopyableHashTree) HashTr
 }
 
 func (d *fileDigest) Nodes(len Bytes) Nodes {
-	if len <= d.leafBlockSize {
+	if len == 0 {
 		return 1
 	}
-	return d.tree.Nodes(len / d.leafBlockSize * Bytes(d.leaf.Size()))
+	return Nodes((len-1)/d.leafBlockSize) + 1
 }
 
 func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
@@ -57,6 +65,11 @@ func (d *fileDigest) Reset() {
 	d.leaf.Reset()
 	d.len = 0
 }
+
+func (d *fileDigestSample) Write(p []byte) (int, error) {
+	panic("the sample can not be writen to")
+}
+
 func (d *fileDigest) Write(p []byte) (int, error) {
 	startLength := Bytes(len(p))
 	xn := d.len % d.leafBlockSize
@@ -73,6 +86,10 @@ func (d *fileDigest) Write(p []byte) (int, error) {
 	}
 	d.len += startLength
 	return int(startLength), nil
+}
+
+func (d *fileDigestSample) Sum(in []byte) []byte {
+	panic("the sample can not be summed")
 }
 
 func (d *fileDigest) Sum(in []byte) []byte {
