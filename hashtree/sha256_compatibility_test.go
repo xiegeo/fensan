@@ -61,6 +61,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+// To show ht_sha256block is really sha256block.
 // Make sure when sha256padding and ht_sha256block are used for hashing of inner nodes,
 // hashes of data less than 56 bytes using tree hash alone is the same as original sha256,
 // and hashes of longer data are not equal

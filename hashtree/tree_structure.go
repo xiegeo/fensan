@@ -40,5 +40,5 @@ func HashTreeSize(leafs Nodes) int64 {
 }
 
 func HashPosition(leafs Nodes, l Level, n Nodes) Bytes {
-	return Bytes(HashNumber(leafs, l, n)) * Bytes(treeNodeSize)
+	return Bytes(HashNumber(leafs, l, n)) * Bytes(HashSize)
 }

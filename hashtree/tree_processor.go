@@ -6,13 +6,15 @@ import (
 	"io"
 )
 
-const treeNodeSize = 32
-const HASH_BYTES = treeNodeSize
-const LEVEL_MAX = 64
+//sha256 is 32 bytes
+const HashSize = 32
+
+//the max depth of a hash tree
+const MaxLevel = 64
 
 type H256 [8]uint32 //the internal hash
 
-//bytes must have a length of 32
+//bytes must have a length of HashSize
 func FromBytes(bytes []byte) *H256 {
 	return fromBytes(bytes)
 }
@@ -53,15 +55,15 @@ type CopyableHashTree interface {
 
 // treeDigest represents the partial evaluation of a hashtree.
 type treeDigest struct {
-	x                 [treeNodeSize]byte           // unprocessed bytes
+	x                 [HashSize]byte               // unprocessed bytes
 	xn                int                          // length of x
 	len               Bytes                        // processed length
-	stack             [LEVEL_MAX]*H256             // partial hashtree of more height then ever needed
+	stack             [MaxLevel]*H256              // partial hashtree of more height then ever needed
 	sn                Level                        // top of stack, depth of tree
 	padder            func(d io.Writer, len Bytes) // the padding function
 	compressor        func(l, r *H256) *H256       // 512 to 256 hash function
 	innerHashListener func(level Level, index Nodes, hash *H256)
-	innersCounter     [LEVEL_MAX]Nodes
+	innersCounter     [MaxLevel]Nodes
 }
 
 func NewTree() CopyableHashTree {
@@ -96,7 +98,7 @@ func (c *Bytes) Write(p []byte) (length int, nil error) {
 
 func (d *treeDigest) Nodes(len Bytes) Nodes {
 	d.padder(&len, len)
-	return NodesFromBytes(len, treeNodeSize)
+	return NodesFromBytes(len, HashSize)
 }
 
 func (d *treeDigest) Levels(n Nodes) Level {
@@ -111,9 +113,9 @@ func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash 
 	d.innerHashListener = l
 }
 
-func (d *treeDigest) Size() int { return treeNodeSize }
+func (d *treeDigest) Size() int { return HashSize }
 
-func (d *treeDigest) BlockSize() int { return treeNodeSize }
+func (d *treeDigest) BlockSize() int { return HashSize }
 
 func (d *treeDigest) Reset() {
 	d.xn = 0
@@ -122,11 +124,11 @@ func (d *treeDigest) Reset() {
 }
 func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 	startLength = len(p)
-	for len(p)+d.xn >= treeNodeSize {
-		for i := 0; i < treeNodeSize-d.xn; i++ {
+	for len(p)+d.xn >= HashSize {
+		for i := 0; i < HashSize-d.xn; i++ {
 			d.x[d.xn+i] = p[i]
 		}
-		p = p[treeNodeSize-d.xn:]
+		p = p[HashSize-d.xn:]
 		d.xn = 0
 		d.writeStack(fromBytes(d.x[:]), 0)
 	}

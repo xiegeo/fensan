@@ -48,11 +48,11 @@ func minus(left *H256, right *H256) *H256 {
 
 // Test the order and structure of the file processor by making it duplicate tree processor
 func TestFileOrder(t *testing.T) {
-	fileSize := treeNodeSize*5 + 1
+	fileSize := HashSize*5 + 1
 	tree := NewTree().(*treeDigest)
 	t1 := *tree
 	t2 := *tree
-	file := NewFile2(treeNodeSize, &t1, &t2)
+	file := NewFile2(HashSize, &t1, &t2)
 	buf := make([]byte, fileSize)
 	tree.Write(buf)
 	tsum := tree.Sum(nil)
