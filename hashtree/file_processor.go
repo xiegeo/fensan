@@ -36,27 +36,11 @@ func NewFile2(leafBlockSize Bytes, leaf hash.Hash, tree CopyableHashTree) HashTr
 	return d
 }
 
-func FileNodesDefault(len Bytes) Nodes {
-	return FileNodes(len, LeafBlockSize)
-}
-
-func FileNodes(len Bytes, blockSize Bytes) Nodes {
-	if len == 0 {
+func (d *fileDigest) Nodes(len Bytes) Nodes {
+	if len <= d.leafBlockSize {
 		return 1
 	}
-	return Nodes((len-1)/blockSize) + 1
-}
-
-func (d *fileDigest) Nodes(len Bytes) Nodes {
-	return FileNodes(len, d.BlockSizeBytes())
-}
-
-func (d *fileDigest) Levels(n Nodes) Level {
-	return d.tree.Levels(n)
-}
-
-func (d *fileDigest) LevelWidth(n Nodes, level Level) Nodes {
-	return d.tree.LevelWidth(n, level)
+	return d.tree.Nodes(len / d.leafBlockSize * Bytes(d.leaf.Size()))
 }
 
 func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {

@@ -14,10 +14,12 @@ const MaxLevel = 64
 
 type H256 [8]uint32 //the internal hash
 
-//bytes must have a length of HashSize
+//FromBytes create a hash from bytes
+//bytes must have a length of HashSize (32)
 func FromBytes(bytes []byte) *H256 {
 	return fromBytes(bytes)
 }
+
 func fromBytes(bytes []byte) *H256 {
 	var h H256
 	for i := 0; i < 8; i++ {
@@ -26,6 +28,9 @@ func fromBytes(bytes []byte) *H256 {
 	}
 	return &h
 }
+
+//ToBytes reads out bytes from a hash
+//bytes will have a length of HashSize (32)
 func (h *H256) ToBytes() []byte {
 	return h.toBytes()
 }
@@ -42,12 +47,20 @@ func (h *H256) toBytes() []byte {
 
 type HashTree interface {
 	hash.Hash
+
+	//Nodes returns the number of nodes on the
+	//bottom level of a hash tree covering len
+	//bytes of data.
+	//The padder is used by this function.
 	Nodes(len Bytes) Nodes
-	Levels(n Nodes) Level
-	LevelWidth(n Nodes, level Level) Nodes
+
+	//SetInnerHashListener set a listener that receive
+	//callbacks everytime an inner hash is calculated.
 	SetInnerHashListener(l func(l Level, i Nodes, h *H256))
 }
 
+//CopyableHashTree allows copying of the internal state.
+//Because the Sum function might pad, but can't reset.
 type CopyableHashTree interface {
 	HashTree
 	Copy() CopyableHashTree
@@ -89,7 +102,7 @@ func (d *treeDigest) Copy() CopyableHashTree {
 	return &d0
 }
 
-// increment Bytes by length of input
+//Write for Bytes only increment Bytes by length of input
 func (c *Bytes) Write(p []byte) (length int, nil error) {
 	length = len(p)
 	*c += Bytes(length)
@@ -98,15 +111,7 @@ func (c *Bytes) Write(p []byte) (length int, nil error) {
 
 func (d *treeDigest) Nodes(len Bytes) Nodes {
 	d.padder(&len, len)
-	return NodesFromBytes(len, HashSize)
-}
-
-func (d *treeDigest) Levels(n Nodes) Level {
-	return Levels(n)
-}
-
-func (d *treeDigest) LevelWidth(n Nodes, l Level) Nodes {
-	return LevelWidth(n, l)
+	return Nodes(len)
 }
 
 func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
@@ -191,7 +196,10 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 	return append(in, right.toBytes()...)
 }
 
-// to pad with 0 or more of bytes 0x00
+//ZeroPad32bytes pads with 0 or more of bytes 0x00.
+//Use this when the size is known externally and
+//the shortness of content makes padding the size
+//too expansive.
 func ZeroPad32bytes(d io.Writer, len Bytes) {
 	padSize := (32 - (len % 32)) % 32
 	if len == 0 {
@@ -200,7 +208,9 @@ func ZeroPad32bytes(d io.Writer, len Bytes) {
 	d.Write(make([]byte, padSize))
 }
 
-// use this when there should not need any padding, input is already in blocks, or non.
+//NoPad32bytes is a special case of ZeroPad32bytes
+//when content is known to be in one or more multiples
+//of 32 byte blocks, panic otherwise
 func NoPad32bytes(d io.Writer, len Bytes) {
 	if len%32 != 0 || len == 0 {
 		panic(fmt.Sprintf("need padding of %v bytes for length of %v", 32-len%32, len))

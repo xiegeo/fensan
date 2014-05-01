@@ -19,11 +19,10 @@ var expectedTreeLevels = []treeLevels{
 }
 
 func TestTreeLevels(t *testing.T) {
-	h := NewTree()
 	for i := 0; i < len(expectedTreeLevels); i++ {
 		e := expectedTreeLevels[i]
-		if h.Levels(e.n) != e.levels {
-			t.Fatalf("Levels(%d) = %d want %d", e.n, h.Levels(e.n), e.levels)
+		if Levels(e.n) != e.levels {
+			t.Fatalf("Levels(%d) = %d want %d", e.n, Levels(e.n), e.levels)
 		}
 	}
 }
@@ -53,11 +52,10 @@ var expectedLevelWidth = []levelWidth{
 }
 
 func TestLevelWidth(t *testing.T) {
-	h := NewTree()
 	for i := 0; i < len(expectedLevelWidth); i++ {
 		e := expectedLevelWidth[i]
-		if h.LevelWidth(e.n, e.level) != e.width {
-			t.Fatalf("LevelWidth(%d,%d) = %d want %d", e.n, e.level, h.LevelWidth(e.n, e.level), e.width)
+		if LevelWidth(e.n, e.level) != e.width {
+			t.Fatalf("LevelWidth(%d,%d) = %d want %d", e.n, e.level, LevelWidth(e.n, e.level), e.width)
 		}
 	}
 }
