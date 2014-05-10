@@ -57,3 +57,22 @@ type PConn interface {
 	//Close closes the connection. see net.Conn Close()
 	Close() error
 }
+
+//ReceiveBytes get bytes from the Receive function of PConn
+func ReceiveBytes(p PConn) ([]byte, error) {
+	b := &bytesDecoder{}
+	err := p.Receive(b)
+	if err != nil {
+		return nil, err
+	}
+	return b.buf, nil
+}
+
+type bytesDecoder struct {
+	buf []byte
+}
+
+func (b *bytesDecoder) Write(p []byte) (int, error) {
+	b.buf = append(b.buf, p...)
+	return len(p), nil
+}
