@@ -35,14 +35,18 @@ type PConn interface {
 	//A good default error handling strategy is to close the connection.
 	Send(msg []byte) error
 
-	//Receive receives a message and have decoder process it.
-	//Receive blocks untill decoder have finnshed processing the data unless
-	//error is not nil.
+	//Receive receives a message as a reader. read EOF is the end of message.
+	//Receive may block, or return reader like a future.
 	//
+	//Receive should not be called again untill read report EOF. ReceiveInWriter
+	//and ReceiveBytes does this for you by blocking.
+	//
+	//All Errors are reported by read. Any error, other then EOF means all actions
+	//taken by reader must be reverted for security purposes.
 	//Error Conditions: those from net.Conn Read, or data corruption detected by
-	//this PConn or the decoder.
+	//this PConn.
 	//A good default error handling strategy is to close the connection.
-	Receive(decoder io.Writer) error
+	Receive() io.Reader
 
 	//MaxMsgLength is the max length of a msg.
 	//
@@ -58,10 +62,20 @@ type PConn interface {
 	Close() error
 }
 
+//ReceiveInWriter receives a full message and have decoder process it.
+//Receive blocks untill decoder have finnshed processing the data unless
+//error is not nil.
+func ReceiveInWriter(p PConn, decoder io.Writer) error {
+	r := p.Receive()
+	_, err := io.Copy(decoder, r)
+	return err
+}
+
 //ReceiveBytes get bytes from the Receive function of PConn
+//Returns all bytes of a message will nil error, or nil message with some error
 func ReceiveBytes(p PConn) ([]byte, error) {
 	b := &bytesDecoder{}
-	err := p.Receive(b)
+	err := ReceiveInWriter(p, b)
 	if err != nil {
 		return nil, err
 	}
