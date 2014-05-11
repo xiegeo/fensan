@@ -26,19 +26,26 @@ import (
 //that users don't need to worry about separating data in a stream.
 //One Send function call will be matched by one Receive on the other end.
 //
+//Use SendBytes and ReceiveBytes for a []byte interface
+//
 //Multiple goroutines may NOT invoke methods on a Conn simultaneously, unless supported.
 type PConn interface {
 
-	//Send sends a message. Send may block when buffer is full.
+	//Sender sends a message written to the returned writer. The message must end
+	//by Close, else nothing should happen on the other end.
+	//Sender's Write and Close may block when network buffer is full.
+	//
+	//Unless supported, sender can only be called again after the last sender is closed.
+	//Sender may rereturn a old writer, previously closed, to send a new message.
 	//
 	//Error Condtitions: those from net.Conn Write.
-	//A good default error handling strategy is to close the connection.
-	Send(msg []byte) error
+	//A good default error handling strategy is to close the connection (not the sender).
+	Sender() io.WriteCloser
 
 	//Receive receives a message as a reader. read EOF is the end of message.
 	//Receive may block, or return reader like a future.
 	//
-	//Receive should not be called again untill read report EOF. ReceiveInWriter
+	//Unless supported, Receive should not be called again untill read report EOF. ReceiveInWriter
 	//and ReceiveBytes does this for you by blocking.
 	//
 	//All Errors are reported by read. Any error, other then EOF means all actions
@@ -46,7 +53,7 @@ type PConn interface {
 	//Error Conditions: those from net.Conn Read, or data corruption detected by
 	//this PConn.
 	//A good default error handling strategy is to close the connection.
-	Receive() io.Reader
+	Receiver() io.Reader
 
 	//MaxMsgLength is the max length of a msg.
 	//
@@ -62,11 +69,21 @@ type PConn interface {
 	Close() error
 }
 
+//SendBytes sends a message using Sender
+func SendBytes(p PConn, msg []byte) error {
+	s := p.Sender()
+	_, err := s.Write(msg)
+	if err != nil {
+		return err
+	}
+	return s.Close()
+}
+
 //ReceiveInWriter receives a full message and have decoder process it.
 //Receive blocks untill decoder have finnshed processing the data unless
 //error is not nil.
 func ReceiveInWriter(p PConn, decoder io.Writer) error {
-	r := p.Receive()
+	r := p.Receiver()
 	_, err := io.Copy(decoder, r)
 	return err
 }

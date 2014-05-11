@@ -2,50 +2,30 @@ package pconn
 
 import (
 	"bufio"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
 )
 
+//PTCP implements PConn over net.TCPConn
 type PTCP struct {
 	tcp                 *net.TCPConn
+	writeBuf            *pTCPSender
 	readBuf             *bufio.Reader
 	lastReader          *io.LimitedReader //to check that the last read is finished
 	debugSendCounter    byte              //not really needed just an extra check on the data
 	debugReceiveCounter byte
-	buf                 []byte
 }
 
 func NewPTCP(c *net.TCPConn) *PTCP {
-	return &PTCP{c, bufio.NewReader(c), nil, 0, 0, nil}
+	return &PTCP{c, nil, bufio.NewReader(c), nil, 0, 0}
 }
 
-const maxSendLengthIncrease = 11 //10 for varint + 1 for debug_counter
-
-func (p *PTCP) Send(msg []byte) error {
-	length := len(msg)
-	if length > p.MaxMsgLength() {
-		panic("send msg is too long")
-	}
-	buf := p.buf
-	if buf == nil {
-		buf = make([]byte, p.MaxMsgLength()+maxSendLengthIncrease)
-	}
-	buf = buf[:cap(buf)]
-	size := binary.PutUvarint(buf, uint64(length))
-	copy(buf[1:size+1], buf[:size])
-	buf[0] = p.debugSendCounter
-	p.debugSendCounter++
-	copy(buf[size+1:], msg)
-	buf = buf[:1+size+length]
-	//fmt.Print(buf)
-	_, err := p.tcp.Write(buf) //one write call, avoid sending many packets when on no delay.
-	p.buf = buf
-	return err
+func (p *PTCP) Sender() io.WriteCloser {
+	return p.renewWriteBuf()
 }
 
-func (p *PTCP) Receive() io.Reader {
+func (p *PTCP) Receiver() io.Reader {
 	if p.lastReader != nil && p.lastReader.N > 0 {
 		panic("Receive is not ready for reused")
 	}
@@ -58,11 +38,16 @@ func (p *PTCP) Receive() io.Reader {
 	}
 	p.debugReceiveCounter++
 
-	length, err := binary.ReadUvarint(p.readBuf)
+	h, err := p.readBuf.ReadByte()
 	if err != nil {
 		return er(err)
 	}
-	if length > uint64(p.MaxMsgLength()) {
+	l, err := p.readBuf.ReadByte()
+	if err != nil {
+		return er(err)
+	}
+	length := int(h)<<8 + int(l)
+	if length > p.MaxMsgLength() {
 		return erf("data corrupted: data is too long")
 	}
 
@@ -90,7 +75,7 @@ func er(err error) errorReader {
 	}
 	_, notOk := err.(io.Reader)
 	if notOk {
-		panic("errorReader does not support other error that also reads")
+		panic("errorReader does not support other errors that also reads")
 	}
 	return errorReader{err}
 }

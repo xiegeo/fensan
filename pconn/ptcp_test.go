@@ -20,9 +20,13 @@ func TestPTCP(t *testing.T) {
 		assertNil(err)
 		rc := NewPTCP(request)
 		for _, d := range data {
-			err = rc.Send(d)
+			err = SendBytes(rc, d)
 			assertNil(err)
 		}
+		//try send bad data
+		request.Write([]byte{99})
+
+		rc.Close()
 	}()
 
 	accept, err := listener.AcceptTCP()
@@ -34,6 +38,11 @@ func TestPTCP(t *testing.T) {
 		if !bytes.Equal(got, d) {
 			t.Error("send:", d, " but received:", got)
 		}
+	}
+	//try get bad data
+	got, err := ReceiveBytes(ac)
+	if len(got) != 0 || err == nil {
+		t.Error("expecting bad data, but got:", got, " with error:", err)
 	}
 }
 
