@@ -8,9 +8,12 @@ between two end points, first based on TCP, that is easy to use to send data
 taking advantages of encryption and UDP without large api changes.
 
 The preservation of message boundaries in PConns have several advantages vs streaming:
+
 - Protocol Buffers does not self terminate, so that where one message end and the next start needs to be added before written to a stream such as TCP.
+
 - Exposing message boundaries to encryption algorithms allows protection against truncation attacks. A Message is either processed in full, or not at all. To guarantee that a message is processed, an application level reply is still necessary.
-- Easy of switching to a lossy transport such as UDP.
+
+- Ease of switching to a lossy transport such as UDP.
 
 Features to manage multiple connections: a resource pool, will be somewhere else.
 Features to create compatible connections with existing internet services will
@@ -36,7 +39,7 @@ type PConn interface {
 	//Sender's Write and Close may block when network buffer is full.
 	//
 	//Unless supported, sender can only be called again after the last sender is closed.
-	//Sender may rereturn a old writer, previously closed, to send a new message.
+	//Sender may re-return an old writer, previously closed, to send a new message.
 	//
 	//Error Condtitions: those from net.Conn Write.
 	//A good default error handling strategy is to close the connection (not the sender).
@@ -80,6 +83,7 @@ func SendBytes(p PConn, msg []byte) error {
 }
 
 //ReceiveInWriter receives a full message and have decoder process it.
+//
 //Receive blocks untill decoder have finnshed processing the data unless
 //error is not nil.
 func ReceiveInWriter(p PConn, decoder io.Writer) error {
@@ -88,8 +92,9 @@ func ReceiveInWriter(p PConn, decoder io.Writer) error {
 	return err
 }
 
-//ReceiveBytes get bytes from the Receive function of PConn
-//Returns all bytes of a message will nil error, or nil message with some error
+//ReceiveBytes get bytes from the Receive function of PConn.
+//
+//It returns all bytes of a message will nil error, or nil message with some error
 func ReceiveBytes(p PConn) ([]byte, error) {
 	b := &bytesDecoder{}
 	err := ReceiveInWriter(p, b)
