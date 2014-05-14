@@ -1,7 +1,10 @@
 // Adopted from Go crypto/sha256
-// To use sha256 as a compression function
+// To use sha2 as a compression function (512 to 256)
+// It is used as the inner hash of the hashtree, using
+// sha2-224 init vectors to be a different hash function
+// from the leaf hash, which uses sha2-256 unmodified.
 //
-// Which carries the following notice:
+// Origin carried the following notices:
 //
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -14,14 +17,14 @@
 package hashtree
 
 const (
-	_Init0 = 0x6A09E667
-	_Init1 = 0xBB67AE85
-	_Init2 = 0x3C6EF372
-	_Init3 = 0xA54FF53A
-	_Init4 = 0x510E527F
-	_Init5 = 0x9B05688C
-	_Init6 = 0x1F83D9AB
-	_Init7 = 0x5BE0CD19
+	init0_224 = 0xC1059ED8
+	init1_224 = 0x367CD507
+	init2_224 = 0x3070DD17
+	init3_224 = 0xF70E5939
+	init4_224 = 0xFFC00B31
+	init5_224 = 0x68581511
+	init6_224 = 0x64F98FA7
+	init7_224 = 0xBEFA4FA4
 )
 
 var _K = []uint32{
@@ -94,7 +97,7 @@ var _K = []uint32{
 func ht_sha256block(left, right *H256) *H256 {
 	var w [64]uint32
 	var h0, h1, h2, h3, h4, h5, h6, h7 uint32
-	h0, h1, h2, h3, h4, h5, h6, h7 = _Init0, _Init1, _Init2, _Init3, _Init4, _Init5, _Init6, _Init7
+	h0, h1, h2, h3, h4, h5, h6, h7 = init0_224, init1_224, init2_224, init3_224, init4_224, init5_224, init6_224, init7_224
 	for i := 0; i < 8; i++ {
 		w[i] = left[i]
 	}
