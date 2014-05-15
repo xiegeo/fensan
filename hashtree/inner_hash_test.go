@@ -34,7 +34,7 @@ type levelWidth struct {
 }
 
 var expectedLevelWidth = []levelWidth{
-	{1, -1, 0}, {2, -1, 0}, {3, -1, 0}, //special case for level < 0, no nodes exist here so the width is 0
+	//{1, -1, 0}, {2, -1, 0}, {3, -1, 0}, //special case for level < 0, no nodes exist here so the width is 0
 
 	{1, 0, 1},
 
@@ -86,9 +86,9 @@ func TestInnerHashListener(t *testing.T) {
 	}, t)
 }
 func testInnerHashListener(inner [][]int32, t *testing.T) {
-	t.Log(inner)
+	//t.Log(inner)
 	listener := func(l Level, i Nodes, hash *H256) {
-		t.Log(l, i, hash)
+		//t.Log(l, i, hash)
 		defer func() {
 			if r := recover(); r != nil {
 				t.Fatalf("error:%s, at Level:%d, Node:%d ", r, l, i)

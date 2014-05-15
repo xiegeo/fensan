@@ -15,7 +15,7 @@ type Level int
 type Bytes int64
 
 //Nodes is the number of Nodes in a level,
-//or the index of a node in a level,
+//or the index of a node in a level.
 //Nodes is signed to allow representation of deltas.
 type Nodes int
 
@@ -30,7 +30,7 @@ func Levels(n Nodes) Level {
 //a base with n Nodes.
 func LevelWidth(n Nodes, l Level) Nodes {
 	if l < 0 {
-		return 0
+		panic("can't see below")
 	}
 	for l > 0 {
 		n = (n + 1) / 2

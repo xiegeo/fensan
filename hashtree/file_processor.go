@@ -28,7 +28,7 @@ type fileDigestSample struct {
 var I = fileDigestSample{NewFile()}
 
 // Create the standard file tree hash using leaf blocks of LeafBlockSize (1kB)
-// and "crypto/sha256", and inner hash using sha256 without padding.
+// and "crypto/sha256", and inner hash using sha256 (244's IHV) without padding.
 func NewFile() HashTree {
 	return NewFile2(LeafBlockSize, sha256.New(), NewTree2(NoPad32bytes, ht_sha256block))
 }
