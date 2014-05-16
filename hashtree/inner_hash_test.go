@@ -87,13 +87,13 @@ func TestInnerHashListener(t *testing.T) {
 }
 func testInnerHashListener(inner [][]int32, t *testing.T) {
 	//t.Log(inner)
-	listener := func(l Level, i Nodes, hash *H256) {
-		//t.Log(l, i, hash)
-		defer func() {
+	listener := func(l Level, i Nodes, hash, left, right *H256) {
+		//t.Log(l, i, hash, left, right)
+		/*defer func() {
 			if r := recover(); r != nil {
 				t.Fatalf("error:%s, at Level:%d, Node:%d ", r, l, i)
 			}
-		}()
+		}()*/
 		h := int32(hash[0])
 		if inner[l][i] != h {
 			if inner[l][i] == h+2000 {
@@ -102,6 +102,32 @@ func testInnerHashListener(inner [][]int32, t *testing.T) {
 			t.Fatalf("Level:%d, Node:%d, hash:%d, should be %d", l, i, h, inner[l][i])
 		}
 		inner[l][i] += 2000 //mark heard
+
+		//check child
+		if l == 0 {
+			if left != nil || right != nil {
+				t.Fatal("childs must be nil on base level")
+			}
+		} else {
+			if right == nil {
+				lc := int32(left[0])
+				if h != lc {
+					t.Fatal("promoted must idential")
+				}
+				if lc+2000 != inner[l-1][i*2] {
+					t.Fatal("child miss-match")
+				}
+			} else {
+				lc := int32(left[0]) + 2000
+				rc := int32(right[0]) + 2000
+				if lc != inner[l-1][i*2] {
+					t.Fatalf("child miss-match:%v!=%v@%v,%v", lc, inner[l-1][i*2], l, i)
+				}
+				if rc != inner[l-1][i*2+1] {
+					t.Fatal("child miss-match")
+				}
+			}
+		}
 	}
 	c := NewTree2(NoPad32bytes, minus).(*treeDigest)
 	c.SetInnerHashListener(listener)

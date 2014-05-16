@@ -51,7 +51,7 @@ func (d *fileDigest) Nodes(len Bytes) Nodes {
 	return Nodes((len-1)/d.leafBlockSize) + 1
 }
 
-func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
+func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash, left, right *H256)) {
 	d.tree.SetInnerHashListener(l)
 }
 

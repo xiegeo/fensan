@@ -49,7 +49,12 @@ type HashTree interface {
 
 	//SetInnerHashListener set a listener that receive
 	//callbacks everytime an inner hash is calculated.
-	SetInnerHashListener(l func(l Level, i Nodes, h *H256))
+	//
+	//On level 1, left and right child hashes are nil.
+	//
+	//On right-most nodes that are promoted without hashing,
+	//left child is the same hash, and right is nil.
+	SetInnerHashListener(l func(level Level, index Nodes, hash, left, right *H256))
 }
 
 //CopyableHashTree allows copying of the internal state.
@@ -68,7 +73,7 @@ type treeDigest struct {
 	sn                Level                        // top of stack, depth of tree
 	padder            func(d io.Writer, len Bytes) // the padding function
 	compressor        func(l, r *H256) *H256       // 512 to 256 hash function
-	innerHashListener func(level Level, index Nodes, hash *H256)
+	innerHashListener func(level Level, index Nodes, hash, left, right *H256)
 	innersCounter     [MaxLevel]Nodes
 }
 
@@ -107,7 +112,7 @@ func (d *treeDigest) Nodes(len Bytes) Nodes {
 	return Nodes(len)
 }
 
-func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash *H256)) {
+func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash, left, right *H256)) {
 	d.innerHashListener = l
 }
 
@@ -120,7 +125,7 @@ func (d *treeDigest) Reset() {
 	d.len = 0
 	d.stack = [64]*H256{nil}
 }
-func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
+func (d *treeDigest) Write(p []byte) (startLength int, err error) {
 	startLength = len(p)
 	for len(p)+d.xn >= HashSize {
 		for i := 0; i < HashSize-d.xn; i++ {
@@ -128,7 +133,7 @@ func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 		}
 		p = p[HashSize-d.xn:]
 		d.xn = 0
-		d.writeStack(FromBytes(d.x[:]), 0)
+		d.writeStack(0, FromBytes(d.x[:]), nil, nil)
 	}
 	if len(p) > 0 {
 		for i := 0; i < len(p); i++ {
@@ -137,18 +142,18 @@ func (d *treeDigest) Write(p []byte) (startLength int, nil error) {
 		d.xn += len(p)
 	}
 	d.len += Bytes(startLength)
-	return
+	return startLength, nil
 }
 
-func (d *treeDigest) listenInner(h *H256, l Level) {
+func (d *treeDigest) listenInner(l Level, h, left, right *H256) {
 	if d.innerHashListener != nil {
-		d.innerHashListener(l, d.innersCounter[l], h)
+		d.innerHashListener(l, d.innersCounter[l], h, left, right)
 	}
 	d.innersCounter[l]++
 }
 
-func (d *treeDigest) writeStack(node *H256, level Level) {
-	d.listenInner(node, level)
+func (d *treeDigest) writeStack(level Level, node, l, r *H256) {
+	d.listenInner(level, node, l, r)
 	if d.sn == level {
 		d.stack[level] = node
 		d.sn++
@@ -157,7 +162,7 @@ func (d *treeDigest) writeStack(node *H256, level Level) {
 	} else {
 		last := d.stack[level]
 		d.stack[level] = nil
-		d.writeStack(d.compressor(last, node), level+1)
+		d.writeStack(level+1, d.compressor(last, node), last, node)
 	}
 }
 
@@ -176,14 +181,17 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 		right = d.stack[i]
 	}
 	if i < d.sn {
-		d.listenInner(right, i)
+		d.listenInner(i, right, right, nil)
 	}
 	for ; i < d.sn; i++ {
 		left := d.stack[i]
 		if left != nil {
+			oldR := right
 			right = d.compressor(left, right)
+			d.listenInner(i+1, right, left, oldR)
+		} else {
+			d.listenInner(i+1, right, right, nil)
 		}
-		d.listenInner(right, i+1)
 	}
 
 	return append(in, right.ToBytes()...)
