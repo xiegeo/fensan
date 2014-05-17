@@ -9,10 +9,12 @@ import (
 //Level is signed to allow representation of deltas.
 type Level int
 
-//Bytes is the size in bytes.
-//Bytes is signed to allow representation of deltas.
-//Bytes is 64 bits like in the file io apis
-type Bytes int64
+//int64 is the size in bytes.
+//It is signed to allow representation of deltas.
+//It is int64 as in file io api's usage.
+//Since Level and Nodes are typed, bytes using int64 directly does not confuse
+//with Level and Nodes.
+//type int64 int64
 
 //Nodes is the number of Nodes in a level,
 //or the index of a node in a level.
@@ -74,8 +76,8 @@ func HashTreeSize(leafs Nodes) int64 {
 
 //HashPosition uses hash HashNumber to tell you where you can
 //put/get an inner hash in a byte array, without overlaps or unused space.
-func HashPosition(leafs Nodes, l Level, n Nodes) Bytes {
-	return Bytes(HashNumber(leafs, l, n)) * Bytes(HashSize)
+func HashPosition(leafs Nodes, l Level, n Nodes) int64 {
+	return int64(HashNumber(leafs, l, n)) * int64(HashSize)
 }
 
 //SplitLength split the length of covered by an inner node in the tree to the
@@ -85,11 +87,11 @@ func HashPosition(leafs Nodes, l Level, n Nodes) Bytes {
 //	b = l + r
 //	l is the largest possible power of 2, and l < b
 //	r > 0
-func SplitLength(b Bytes) (l, r Bytes) {
+func SplitLength(b int64) (l, r int64) {
 	if b <= LeafBlockSize {
 		panic("can't split a leaf node")
 	}
-	mask := Bytes(highBitMask64(uint64(b)))
+	mask := int64(highBitMask64(uint64(b)))
 	if mask == b {
 		l = b / 2
 		r = l

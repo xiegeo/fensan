@@ -60,7 +60,7 @@ func TestLevelWidth(t *testing.T) {
 	}
 }
 
-type nodeChildLength struct{ b, l, r Bytes }
+type nodeChildLength struct{ b, l, r int64 }
 
 var expectedCL = []nodeChildLength{
 	{1025, 1024, 1}, {2000, 1024, 2000 - 1024}, {3000, 2048, 3000 - 2048},

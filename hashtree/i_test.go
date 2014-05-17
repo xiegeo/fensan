@@ -3,7 +3,7 @@ package hashtree
 import "testing"
 
 type iTestdata struct {
-	b Bytes
+	b int64
 	n Nodes
 }
 

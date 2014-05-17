@@ -45,7 +45,7 @@ type HashTree interface {
 	//bottom level of a hash tree covering len
 	//bytes of data.
 	//The padder is used by this function.
-	Nodes(len Bytes) Nodes
+	Nodes(len int64) Nodes
 
 	//SetInnerHashListener set a listener that receive
 	//callbacks everytime an inner hash is calculated.
@@ -68,10 +68,10 @@ type CopyableHashTree interface {
 type treeDigest struct {
 	x                 [HashSize]byte               // unprocessed bytes
 	xn                int                          // length of x
-	len               Bytes                        // processed length
+	len               int64                        // processed length
 	stack             [MaxLevel]*H256              // partial hashtree of more height then ever needed
 	sn                Level                        // top of stack, depth of tree
-	padder            func(d io.Writer, len Bytes) // the padding function
+	padder            func(d io.Writer, len int64) // the padding function
 	compressor        func(l, r *H256) *H256       // 512 to 256 hash function
 	innerHashListener func(level Level, index Nodes, hash, left, right *H256)
 	innersCounter     [MaxLevel]Nodes
@@ -88,7 +88,7 @@ func NewNoPadTree() CopyableHashTree {
 // Create a binary tree hash using padder and compressor.
 // Padder mush pad to intervals of 256 bits.
 // Compressor mush hash 2 H256s to 1.
-func NewTree2(padder func(d io.Writer, len Bytes), compressor func(l, r *H256) *H256) CopyableHashTree {
+func NewTree2(padder func(d io.Writer, len int64), compressor func(l, r *H256) *H256) CopyableHashTree {
 	d := new(treeDigest)
 	d.Reset()
 	d.padder = padder
@@ -100,16 +100,19 @@ func (d *treeDigest) Copy() CopyableHashTree {
 	return &d0
 }
 
-//Write for Bytes only increment Bytes by length of input
-func (c *Bytes) Write(p []byte) (length int, nil error) {
+type adder struct{ int64 }
+
+//Write for adder only increment adder by length of input
+func (a *adder) Write(p []byte) (length int, nil error) {
 	length = len(p)
-	*c += Bytes(length)
+	a.int64 += int64(length)
 	return
 }
 
-func (d *treeDigest) Nodes(len Bytes) Nodes {
-	d.padder(&len, len)
-	return Nodes(len)
+func (d *treeDigest) Nodes(len int64) Nodes {
+	a := &adder{len}
+	d.padder(a, len)
+	return Nodes(a.int64)
 }
 
 func (d *treeDigest) SetInnerHashListener(l func(level Level, index Nodes, hash, left, right *H256)) {
@@ -141,7 +144,7 @@ func (d *treeDigest) Write(p []byte) (startLength int, err error) {
 		}
 		d.xn += len(p)
 	}
-	d.len += Bytes(startLength)
+	d.len += int64(startLength)
 	return startLength, nil
 }
 
@@ -201,7 +204,7 @@ func (d0 *treeDigest) Sum(in []byte) []byte {
 //Use this when the size is known externally and
 //the shortness of content makes padding the size
 //too expansive.
-func ZeroPad32bytes(d io.Writer, len Bytes) {
+func ZeroPad32bytes(d io.Writer, len int64) {
 	padSize := (32 - (len % 32)) % 32
 	if len == 0 {
 		padSize = 32
@@ -212,7 +215,7 @@ func ZeroPad32bytes(d io.Writer, len Bytes) {
 //NoPad32bytes is a special case of ZeroPad32bytes
 //when content is known to be in one or more multiples
 //of 32 byte blocks, panic otherwise
-func NoPad32bytes(d io.Writer, len Bytes) {
+func NoPad32bytes(d io.Writer, len int64) {
 	if len%32 != 0 || len == 0 {
 		panic(fmt.Sprintf("need padding of %v bytes for length of %v", 32-len%32, len))
 	}

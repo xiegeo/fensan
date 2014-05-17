@@ -1,7 +1,5 @@
 package store
 
-import ht "github.com/xiegeo/fensan/hashtree"
-
 //HLKey is the hash and length of some data. Used to look up data in a high level
 //database.
 //Even though length is unnecessary for uniqueness, it is an usefull meta to keep
@@ -16,15 +14,15 @@ import ht "github.com/xiegeo/fensan/hashtree"
 //a HLKey is made by the database itself.
 type HLKey interface {
 	Hash() []byte
-	Length() ht.Bytes
+	Length() int64
 }
 
 type hLKey struct {
 	hash   []byte
-	length ht.Bytes
+	length int64
 }
 
-func NewHLKey(hash []byte, length ht.Bytes) HLKey {
+func NewHLKey(hash []byte, length int64) HLKey {
 	return &hLKey{hash, length}
 }
 
@@ -32,6 +30,6 @@ func (k *hLKey) Hash() []byte {
 	return k.hash
 }
 
-func (k *hLKey) Length() ht.Bytes {
+func (k *hLKey) Length() int64 {
 	return k.length
 }

@@ -13,9 +13,9 @@ const (
 
 // fileDigest represents the partial evaluation of a file hash.
 type fileDigest struct {
-	len           Bytes            // processed length
+	len           int64            // processed length
 	leaf          hash.Hash        // a hash, used for hashing leaf nodes
-	leafBlockSize Bytes            // size of base block in bytes
+	leafBlockSize int64            // size of base block in bytes
 	tree          CopyableHashTree // the digest used for inner and root nodes
 }
 
@@ -35,7 +35,7 @@ func NewFile() HashTree {
 
 // Create any tree hash using leaf blocks of size and leaf hash,
 // and inner hash using tree hash, the tree stucture is internal to the tree hash.
-func NewFile2(leafBlockSize Bytes, leaf hash.Hash, tree CopyableHashTree) HashTree {
+func NewFile2(leafBlockSize int64, leaf hash.Hash, tree CopyableHashTree) HashTree {
 	d := new(fileDigest)
 	d.len = 0
 	d.leafBlockSize = leafBlockSize
@@ -44,7 +44,7 @@ func NewFile2(leafBlockSize Bytes, leaf hash.Hash, tree CopyableHashTree) HashTr
 	return d
 }
 
-func (d *fileDigest) Nodes(len Bytes) Nodes {
+func (d *fileDigest) Nodes(len int64) Nodes {
 	if len == 0 {
 		return 1
 	}
@@ -58,7 +58,7 @@ func (d *fileDigest) SetInnerHashListener(l func(level Level, index Nodes, hash,
 func (d *fileDigest) Size() int { return d.tree.Size() }
 
 func (d *fileDigest) BlockSize() int        { return int(d.leafBlockSize) }
-func (d *fileDigest) BlockSizeBytes() Bytes { return d.leafBlockSize }
+func (d *fileDigest) BlockSizeBytes() int64 { return d.leafBlockSize }
 
 func (d *fileDigest) Reset() {
 	d.tree.Reset()
@@ -71,9 +71,9 @@ func (d *fileDigestSample) Write(p []byte) (int, error) {
 }
 
 func (d *fileDigest) Write(p []byte) (int, error) {
-	startLength := Bytes(len(p))
+	startLength := int64(len(p))
 	xn := d.len % d.leafBlockSize
-	for Bytes(len(p))+xn >= d.leafBlockSize {
+	for int64(len(p))+xn >= d.leafBlockSize {
 		writeLength := d.leafBlockSize - xn
 		d.leaf.Write(p[0:writeLength])
 		p = p[writeLength:]
