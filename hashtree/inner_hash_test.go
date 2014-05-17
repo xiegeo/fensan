@@ -60,6 +60,22 @@ func TestLevelWidth(t *testing.T) {
 	}
 }
 
+type nodeChildLength struct{ b, l, r Bytes }
+
+var expectedCL = []nodeChildLength{
+	{1025, 1024, 1}, {2000, 1024, 2000 - 1024}, {3000, 2048, 3000 - 2048},
+	{2048, 1024, 1024},
+}
+
+func TestSplitLength(t *testing.T) {
+	for _, ex := range expectedCL {
+		l, r := SplitLength(ex.b)
+		if l != ex.l || r != ex.r {
+			t.Fatalf("test failed")
+		}
+	}
+}
+
 func TestInnerHashListener(t *testing.T) {
 	testInnerHashListener([][]int32{
 		{0},

@@ -19,10 +19,29 @@ type Bytes int64
 //Nodes is signed to allow representation of deltas.
 type Nodes int
 
+//highBitLoc returns the location of the heighest bit, 1 based, so that 0 is all zeros
+func highBitLoc(n uint32) uint32 {
+	return uint32(math.Ilogb(float64(n)*2 + 1))
+}
+
+//highBitMask returns the largest power of 2 less or equal n
+func highBitMask(n uint32) uint32 {
+	return 1 << (highBitLoc(n) - 1) // 1 << -1 (or max uint32) = 0
+}
+
+func highBitMask64(n uint64) uint64 {
+	if n >= 1<<32 {
+		return uint64(highBitMask(uint32(n>>32)) << 32)
+	} else {
+		return uint64(highBitMask(uint32(n)))
+	}
+
+}
+
 //Levels return the number of Levels (1 or more) of a hash
 //tree with n leaf nodes
 func Levels(n Nodes) Level {
-	return Level(math.Ilogb(float64(n*2-1)) + 1)
+	return Level(highBitLoc(uint32(n-1)) + 1)
 }
 
 //LevelWidth returns the number of nodes in a level,
@@ -57,4 +76,26 @@ func HashTreeSize(leafs Nodes) int64 {
 //put/get an inner hash in a byte array, without overlaps or unused space.
 func HashPosition(leafs Nodes, l Level, n Nodes) Bytes {
 	return Bytes(HashNumber(leafs, l, n)) * Bytes(HashSize)
+}
+
+//SplitLength split the length of covered by an inner node in the tree to the
+//length covered by it's childs. Such that:
+//
+//	b must be larger than LeafBlockSize (1024)
+//	b = l + r
+//	l is the largest possible power of 2, and l < b
+//	r > 0
+func SplitLength(b Bytes) (l, r Bytes) {
+	if b <= LeafBlockSize {
+		panic("can't split a leaf node")
+	}
+	mask := Bytes(highBitMask64(uint64(b)))
+	if mask == b {
+		l = b / 2
+		r = l
+	} else {
+		l = mask
+		r = b - l
+	}
+	return
 }
