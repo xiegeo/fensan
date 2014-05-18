@@ -6,9 +6,14 @@ package store
 //around without significant overhead, for code path conditions, sanity checking,
 //and debuging.
 //
+//Before a file can be fully checked, the length can not be conformed, it is to possible
+//to have two downloads in progress, with the same hash but different length, where
+//at least one can never be competed. So for all network communications, the length
+//is nessary to go with the hash.
+//
 //The length is always included in very link and network request with the hash,
 //or for child nodes inferred from the size of parent and it's position, so we
-//can always know the length when we know the hash, without using any lookup.
+//can always know the length when we know the hash, without using any additional lookup.
 //
 type HLKey interface {
 	Hash() []byte

@@ -20,7 +20,11 @@
 //to client.
 package store
 
-import ht "github.com/xiegeo/fensan/hashtree"
+import (
+	"io"
+
+	ht "github.com/xiegeo/fensan/hashtree"
+)
 
 //KV is an interface for a []byte based key value store. For storing small pieces
 //of metadata that are often updated.
@@ -81,13 +85,26 @@ type MetaStore interface {
 	//InnerHashMinLevel reports the amount of inner hash saved, everything at or
 	//above the Level can be retrieved
 	InnerHashMinLevel() ht.Level
+	//GetInnerHashes reads inner hashes at level and offset, len(hs) should be a
+	//multiple of hash length (32).
+	//
+	//An error is reported if parts of hs is unknown, parts known is still filled
+	//with unknown parts as all zeros.
+	//
+	//If parts of hs are impossible by index range, it panics
 	GetInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) error
+
 	PutInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) (has ht.Nodes, complete bool, err error)
 
+	//TTLGet gets the TTL of a file
 	TTLGet(key HLKey) TTL
+	//TTLSetAtleast updates the TTL to be at least coved to util, the total
+	//increase is multiplied by key.Length() to return costs in storage time by
+	//byteMonth.
+	//Savings in deduplication can be refected in byteMonth.
 	TTLSetAtleast(key HLKey, util TTL) (byteMonth int64)
-	TTLReset(key HLKey, to TTL)
 
+	//Close closes MetaStore
 	Close()
 }
 
@@ -101,8 +118,16 @@ type Database interface {
 	//returns error is b can't be read completely
 	GetAt(key HLKey, b []byte, off int64) error
 	//PutAt writes b to file from offset off.
-	//If
+	//
+	//has returns the number of leaf nodes completed. This can report the progress.
+	//Iff has is full, complete is true
+	//
+	//If hash checking fails, an err is reported. The server can us this information
+	//to demote the source.
 	PutAt(key HLKey, b []byte, off int64) (has ht.Nodes, complete bool, err error)
+
+	//Import a file from reader
+	ImportFromReader(r io.Reader) HLKey
 }
 
 type metaValue struct {
