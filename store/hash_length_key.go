@@ -10,8 +10,6 @@ package store
 //or for child nodes inferred from the size of parent and it's position, so we
 //can always know the length when we know the hash, without using any lookup.
 //
-//Future: HLKeys can inclued hidden database internals for faster lookups when
-//a HLKey is made by the database itself.
 type HLKey interface {
 	Hash() []byte
 	Length() int64
