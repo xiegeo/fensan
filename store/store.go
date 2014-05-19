@@ -29,9 +29,20 @@ import (
 //KV is an interface for a []byte based key value store. For storing small pieces
 //of metadata that are often updated.
 type KV interface {
+	//Get gets the value for the given key. It returns nil if KV does not contain the key.
+	//
+	//Warning: Get might not see what was Set or Deleted until after sync().
+	//This is a temperary work around to easly warp some apis.
 	Get(key []byte) []byte
+	//Set sets the value for the given key. It overwrites any previous value for that key.
+	//Do not set with len(v) == 0, use Delete instead.
 	Set(key []byte, v []byte)
+	//Delete deletes the value for the given key, it is a no-op if KV does not contain the key.
 	Delete(key []byte)
+	//Sync commits all the changes to stable storage. It blocks until done.
+	Sync()
+	//Close closes KV.
+	Close() error
 	GC(startAfterKey []byte, f func(key []byte, v []byte) (delete bool, stop bool))
 }
 
