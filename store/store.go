@@ -61,19 +61,25 @@ type Blob interface {
 	//Sync commits the all WriteAt to stable storage.
 	Sync()
 	//Close closes the Block, allowing the freeing of resources. This Block can
-	//not be used after.
+	//not be used after Close.
 	Close()
 }
 
 //LV (Large Values) is an interface for a Block based data store. For
-//storing large values with length known in advance.
+//storing large values with length known in advance and as part of key.
+//The same key with two sizes represent two different Blobs.
 type LV interface {
 	//New creates a new block in LV, or nil if the key already exist.
+	//size > 0
 	New(key []byte, size int64) Blob
 	//Get returns the Block referenced by key, or nil if key is not found.
-	Get(key []byte) Blob
+	Get(key []byte, size int64) Blob
+	//Move changes the key from from to to, and resizes to newSize.
+	//If from does not exist, or to already exist, then an error is reported.
+	//The Blob keyed by from should not be open.
+	Move(oldKey []byte, oldSize int64, newKey []byte, newSize int64) error
 	//Delete removes the Block repersented by key from LV.
-	Delete(key []byte)
+	Delete(key []byte, size int64)
 }
 
 type FileState int
