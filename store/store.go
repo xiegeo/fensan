@@ -78,8 +78,12 @@ type LV interface {
 	//If from does not exist, or to already exist, then an error is reported.
 	//The Blob keyed by from should not be open.
 	Move(oldKey []byte, oldSize int64, newKey []byte, newSize int64) error
+
 	//Delete removes the Block repersented by key from LV.
-	Delete(key []byte, size int64)
+	//Returns true if blob is not in LV after Delete.
+	Delete(key []byte, size int64) (bool, error)
+
+	Close() error
 }
 
 type FileState int

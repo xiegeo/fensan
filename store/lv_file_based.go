@@ -58,6 +58,10 @@ type folderLV struct {
 	permission os.FileMode
 }
 
+func OpenFolderLV(root string) LV {
+	return &folderLV{root, 0777}
+}
+
 func (f *folderLV) New(key []byte, size int64) Blob {
 	folder, file := byteToFile(f.root, key, size)
 	os.MkdirAll(folder, f.permission)
@@ -112,9 +116,19 @@ func (f *folderLV) Move(oldKey []byte, oldSize int64, newKey []byte, newSize int
 	panic("not implemented")
 }
 
-func (f *folderLV) Delete(key []byte, size int64) {
+func (f *folderLV) Delete(key []byte, size int64) (bool, error) {
 	_, file := byteToFile(f.root, key, size)
-	os.Remove(file)
+	err := os.Remove(file)
+	if err == nil {
+		return true, nil
+	} else if os.IsNotExist(err) {
+		return true, err
+	}
+	return false, err
+}
+
+func (f *folderLV) Close() error {
+	return nil //no-op
 }
 
 const folderKeySize = 2
