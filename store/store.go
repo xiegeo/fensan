@@ -89,12 +89,14 @@ type LV interface {
 type FileState int
 
 const (
-	//FILE_NONE means we don't have this file
-	FILE_NONE FileState = iota
-	//FILE_PART means we have parts of this file
-	FILE_PART
-	//FILE_COMPLETE means we have all of this file
-	FILE_COMPLETE
+	//FileNone means we don't have this file
+	FileNone FileState = iota
+	//FilePart means we have parts of this file
+	FilePart
+	//FileComplete means we have all of this file
+	FileComplete
+	//FileExpired means the ttl is outdated, gc maybe removing this file
+	FileExpired
 )
 
 //MetaStore is a store for hash meta data on top of KV.
@@ -115,11 +117,12 @@ type MetaStore interface {
 	PutInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) (has ht.Nodes, complete bool, err error)
 
 	//TTLGet gets the TTL of a file
+	//TTLGet does not imply having a file. Only that the file is desired to be keeped.
 	TTLGet(key HLKey) TTL
 	//TTLSetAtleast updates the TTL to be at least coved to util, the total
 	//increase is multiplied by key.Length() to return costs in storage time by
 	//byteMonth.
-	//Savings in deduplication can be refected in byteMonth.
+	//Savings in deduplication can be reflected in byteMonth.
 	TTLSetAtleast(key HLKey, util TTL) (byteMonth int64)
 
 	//Close closes MetaStore
@@ -133,7 +136,7 @@ type Database interface {
 	//GetState checks if we have a file or not, or in progress
 	GetState(key HLKey) FileState
 	//GetAt reads len(b) bytes of file key from offset off.
-	//returns error is b can't be read completely
+	//returns error if b can't be read completely
 	GetAt(key HLKey, b []byte, off int64) error
 	//PutAt writes b to file from offset off.
 	//
