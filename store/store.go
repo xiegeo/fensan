@@ -119,14 +119,18 @@ type MetaStore interface {
 	//TTLGet gets the TTL of a file
 	//TTLGet does not imply having a file. Only that the file is desired to be keeped.
 	TTLGet(key HLKey) TTL
-	//TTLSetAtleast updates the TTL to be at least coved to util, the total
+
+	//TTLSetAtleast updates the TTL to be at least coved to until, the total
 	//increase is multiplied by key.Length() to return costs in storage time by
 	//byteMonth.
 	//Savings in deduplication can be reflected in byteMonth.
-	TTLSetAtleast(key HLKey, util TTL) (byteMonth int64)
+	//
+	//The time increased form freeFrom is unaccounted, put in now to not charge before now.
+	//byteMonth = 0 if freeFrom >= until
+	TTLSetAtleast(key HLKey, freeFrom, until TTL) (byteMonth int64)
 
 	//Close closes MetaStore
-	Close()
+	Close() error
 }
 
 //Database is the full interface for all the data of a server,

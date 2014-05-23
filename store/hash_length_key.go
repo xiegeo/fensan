@@ -1,5 +1,7 @@
 package store
 
+import ht "github.com/xiegeo/fensan/hashtree"
+
 //HLKey is the hash and length of some data. Used to look up data in a high level
 //database.
 //Even though length is unnecessary for uniqueness, it is an usefull meta to keep
@@ -16,23 +18,57 @@ package store
 //can always know the length when we know the hash, without using any additional lookup.
 //
 type HLKey interface {
+	//Hash returns the hash of refereced. Do not modify the returned contests
 	Hash() []byte
+	//Length returns the length of refereced file in bytes
 	Length() int64
+	//FullBytes is used when a key need to include length, as an attacker might
+	//claim the existence of a file of the same hash but different size.
+	//Do not modify the returned contests
+	FullBytes() []byte
 }
 
 type hLKey struct {
-	hash   []byte
-	length int64
+	fullBytes []byte
+	length    int64
 }
 
+//NewHLKey create a new HLKey, the hash is deep copied
 func NewHLKey(hash []byte, length int64) HLKey {
-	return &hLKey{hash, length}
+	fb := make([]byte, ht.HashSize+8)
+	copy(fb[:ht.HashSize], hash)
+	littleEndianPutUint64(fb[ht.HashSize:], uint64(length))
+	return &hLKey{fb, length}
+}
+
+func (k *hLKey) FullBytes() []byte {
+	return k.fullBytes
 }
 
 func (k *hLKey) Hash() []byte {
-	return k.hash
+	return k.fullBytes[:ht.HashSize]
 }
 
 func (k *hLKey) Length() int64 {
 	return k.length
 }
+
+//from encoding/binary/binary.go func (littleEndian) PutUint64
+func littleEndianPutUint64(b []byte, v uint64) {
+	b[0] = byte(v)
+	b[1] = byte(v >> 8)
+	b[2] = byte(v >> 16)
+	b[3] = byte(v >> 24)
+	b[4] = byte(v >> 32)
+	b[5] = byte(v >> 40)
+	b[6] = byte(v >> 48)
+	b[7] = byte(v >> 56)
+}
+
+//from encoding/binary/binary.go func (littleEndian) Uint64
+/* unused
+func littleEndianUint64(b []byte) uint64 {
+	return uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
+		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56
+}
+*/
