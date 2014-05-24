@@ -10,6 +10,10 @@ const ttl_base_year = 2000
 //For more information, see fensan/docs
 type TTL int16 //January, 2000 is 0.
 
+const (
+	TTLLongAgo = TTL(-1)
+)
+
 var ttl_now = int16(0)
 
 //Return a TTL for the current period (month), cached. This is a TTL of 0.

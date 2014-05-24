@@ -12,6 +12,18 @@ type metaStore struct {
 	hashStore LV
 }
 
+const BlobSize = 4 << 20 //4MByte blocks
+
+func OpenMetaStore(path string) (MetaStore, error) {
+	minLevel := ht.Levels(BlobSize / ht.LeafBlockSize) // level 13
+	ttlStore, err := OpenLeveldb(path + "/m_ttl")
+	if err != nil {
+		return nil, err
+	}
+	hashStore := OpenFolderLV(path + "/m_hash")
+	return &metaStore{minLevel, ttlStore, hashStore}, nil
+}
+
 func (m *metaStore) InnerHashMinLevel() ht.Level {
 	return m.minLevel
 }
@@ -23,11 +35,13 @@ func (m *metaStore) PutInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.
 }
 func (m *metaStore) TTLGet(key HLKey) TTL {
 	v := m.ttlStore.Get(key.FullBytes())
+	if v == nil {
+		return TTLLongAgo
+	}
 	return TTLFromBytes(v)
 }
 func (m *metaStore) TTLSetAtleast(key HLKey, freeFrom, until TTL) (byteMonth int64) {
-	get := m.ttlStore.Get(key.FullBytes())
-	old := TTLFromBytes(get)
+	old := m.TTLGet(key)
 	if old >= until {
 		return 0
 	}
