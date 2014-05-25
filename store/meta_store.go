@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-
 	ht "github.com/xiegeo/fensan/hashtree"
 )
 

@@ -5,54 +5,6 @@ import (
 	"os"
 )
 
-type fileBlob struct {
-	f    *os.File
-	size int64
-}
-
-func (f *fileBlob) Size() int64 {
-	return f.size
-}
-
-func (f *fileBlob) ReadAt(b []byte, off int64) {
-	assertInRange(b, off, f.size)
-	n, err := f.f.ReadAt(b, off)
-	if n != len(b) || err != nil {
-		panic(fmt.Errorf("can't ReadAt:%v, %v, %v", off, n, err))
-	}
-}
-
-func (f *fileBlob) WriteAt(b []byte, off int64) {
-	assertInRange(b, off, f.size)
-	n, err := f.f.WriteAt(b, off)
-	if n != len(b) || err != nil {
-		panic(fmt.Errorf("can't WriteAt:%v, %v, %v", off, n, err))
-	}
-}
-
-func (f *fileBlob) Sync() {
-	err := f.f.Sync()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (f *fileBlob) Close() {
-	err := f.f.Close()
-	if err != nil {
-		panic(err)
-	}
-}
-
-func assertInRange(buf []byte, off int64, size int64) {
-	if off < 0 {
-		panic(fmt.Errorf("out of range:%v < 0", off))
-	}
-	if int64(len(buf))+off > size {
-		panic(fmt.Errorf("out of range:%v + %v > %v", len(buf), off, size))
-	}
-}
-
 type folderLV struct {
 	root       string
 	permission os.FileMode
@@ -73,7 +25,7 @@ func (f *folderLV) New(key []byte, size int64) Blob {
 				panic(err)
 			}
 			newFile.Truncate(size)
-			return &fileBlob{newFile, size}
+			return NewBlobFromFile(newFile, size)
 		} else {
 			panic(err)
 		}
@@ -109,7 +61,7 @@ func (f *folderLV) get(file string, size int64) Blob {
 	if diskSize != size {
 		panic("wrong size")
 	}
-	return &fileBlob{opened, size}
+	return NewBlobFromFile(opened, size)
 }
 
 func (f *folderLV) Move(oldKey []byte, oldSize int64, newKey []byte, newSize int64) error {

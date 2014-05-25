@@ -22,7 +22,9 @@ package store
 
 import (
 	"io"
+	"os"
 
+	"github.com/xiegeo/fensan/bitset"
 	ht "github.com/xiegeo/fensan/hashtree"
 )
 
@@ -44,25 +46,6 @@ type KV interface {
 	//Close closes KV.
 	Close() error
 	GC(startAfterKey []byte, f func(key []byte, v []byte) (delete bool, stop bool))
-}
-
-//Blob can be used to read/write parts of a long '[]byte' values
-//without loading the full data.
-//It can be backed by os.File, as it is a subset of os.File, except Size.
-//All error reporting are turned off, as none are expected (panic otherwise).
-type Blob interface {
-	//length in bytes for this block
-	Size() int64
-	//ReadAt reads len(b) bytes from the File starting at byte offset off.
-	ReadAt(b []byte, off int64)
-	//WriteAt writes len(b) bytes to the File starting at byte offset off.
-	//WriteAt, may or may not sync to disk, at any order.
-	WriteAt(b []byte, off int64)
-	//Sync commits the all WriteAt to stable storage.
-	Sync()
-	//Close closes the Block, allowing the freeing of resources. This Block can
-	//not be used after Close.
-	Close()
 }
 
 //LV (Large Values) is an interface for a Block based data store. For
@@ -98,6 +81,16 @@ const (
 	//FileExpired means the ttl is outdated, gc maybe removing this file
 	FileExpired
 )
+
+//staticly import Blob interface from bitset
+type Blob interface {
+	bitset.Blob
+}
+
+//staticly import NewBlobFromFile function from bitset
+func NewBlobFromFile(file *os.File, size int64) Blob {
+	return bitset.NewBlobFromFile(file, size)
+}
 
 //MetaStore is a store for hash meta data on top of KV.
 //Such as: Child hashes, data length/hash level, and TTL.
