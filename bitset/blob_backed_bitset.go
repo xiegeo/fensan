@@ -122,9 +122,9 @@ func (b *BlobBackedBitSet) Get(i int) bool {
 
 func (b *BlobBackedBitSet) Capacity() int { return b.bits }
 
-// Flush changes and Close the file, BitSet must not be used again
+//Sync changes and Close the file, BitSet must not be used again
 func (b *BlobBackedBitSet) Close() {
-	b.Flush()
+	b.Sync()
 	b.blob.Close()
 	//nil all internal pointers
 	b.blob = nil
@@ -136,6 +136,13 @@ func (b *BlobBackedBitSet) HaveChanges() bool {
 	return len(b.changes) > 0
 }
 
+//Sync first calls flush, then calls Sync on the underling blob.
+func (b *BlobBackedBitSet) Sync() {
+	b.Flush()
+	b.blob.Sync()
+}
+
+//Flush Writes all changes to the blob
 func (b *BlobBackedBitSet) Flush() {
 	if !b.HaveChanges() {
 		return
@@ -168,6 +175,14 @@ func (b *BlobBackedBitSet) Flush() {
 func (b *BlobBackedBitSet) ReadAt(buf []byte, off int64) {
 	if b.HaveChanges() {
 		fmt.Println("warning: read will flush, please flush explicitly")
+		b.Flush()
+	}
+	b.blob.ReadAt(buf, off)
+}
+
+func (b *BlobBackedBitSet) WriteAt(buf []byte, off int64) {
+	if b.HaveChanges() {
+		fmt.Println("warning: write will flushes, please flush explicitly")
 		b.Flush()
 	}
 	b.blob.ReadAt(buf, off)
