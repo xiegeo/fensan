@@ -12,18 +12,15 @@ const (
 )
 
 type CountingFileBackedBitSet struct {
-	FileBackedBitSet
+	BlobBackedBitSet
 	count int64
 }
 
 func (c *CountingFileBackedBitSet) readCount() int64 {
 	count := int64(0)
 	buf := make([]byte, COUNT_BYTES)
-	_, err := c.f.ReadAt(buf, int64(c.Capacity()+7)/8)
-	if err != nil {
-		panic(err)
-	}
-	err = binary.Read(bytes.NewBuffer(buf), binary.LittleEndian, &count)
+	c.blob.ReadAt(buf, int64(c.Capacity()+7)/8)
+	err := binary.Read(bytes.NewBuffer(buf), binary.LittleEndian, &count)
 	if err != nil {
 		panic(err)
 	}
@@ -36,10 +33,7 @@ func (c *CountingFileBackedBitSet) writeCount(count int64) {
 	if err != nil {
 		panic(err)
 	}
-	_, err = c.f.WriteAt(buf.Bytes(), int64(c.Capacity()+7)/8)
-	if err != nil {
-		panic(err)
-	}
+	c.blob.WriteAt(buf.Bytes(), int64(c.Capacity()+7)/8)
 }
 
 func (c *CountingFileBackedBitSet) recount() int64 {
@@ -47,18 +41,15 @@ func (c *CountingFileBackedBitSet) recount() int64 {
 		panic("recount can not be used with changes")
 	}
 	count := int64(0)
-	buffer := make([]byte, fileBlockSize)
-	buckets := (c.Capacity() + fileBlockBits - 1) / fileBlockBits
+	buffer := make([]byte, blobWriteBlock)
+	buckets := (c.Capacity() + blobWriteBlockBits - 1) / blobWriteBlockBits
 	for i := 0; i < buckets; i++ {
-		starts := i * fileBlockSize
+		starts := i * blobWriteBlock
 		if i == buckets-1 {
 			bufferSize := (c.Capacity()+8-1)/8 - starts
 			buffer = make([]byte, bufferSize)
 		}
-		_, err := c.f.ReadAt(buffer, int64(starts))
-		if err != nil {
-			panic(err)
-		}
+		c.blob.ReadAt(buffer, int64(starts))
 		for _, b := range buffer {
 			for i := uint(0); i < 8; i++ {
 				if b&(1<<i) != 0 {
@@ -81,7 +72,7 @@ func OpenCountingFileBacked(fileName string, capacity int) *CountingFileBackedBi
 	return counting
 }
 
-func (c *CountingFileBackedBitSet) Capacity() int { return c.c - COUNT_BITS }
+func (c *CountingFileBackedBitSet) Capacity() int { return c.bits - COUNT_BITS }
 
 func (c *CountingFileBackedBitSet) Count() int {
 	return int(c.count)
@@ -96,7 +87,7 @@ func (c *CountingFileBackedBitSet) Set(i int) {
 		return
 	} else {
 		c.count++
-		c.FileBackedBitSet.Set(i)
+		c.BlobBackedBitSet.Set(i)
 		if CHECK_INTEX && int(c.count) > c.Capacity() {
 			panic("count > c.Capacity()")
 		}
@@ -108,7 +99,7 @@ func (c *CountingFileBackedBitSet) Unset(i int) {
 		return
 	} else {
 		c.count--
-		c.FileBackedBitSet.Unset(i)
+		c.BlobBackedBitSet.Unset(i)
 		if CHECK_INTEX && c.count < 0 {
 			panic("count < 0")
 		}
@@ -120,12 +111,12 @@ func (c *CountingFileBackedBitSet) Flush() {
 		return
 	}
 	c.writeCount(-1) // mark count as dirty
-	c.FileBackedBitSet.Flush()
+	c.BlobBackedBitSet.Flush()
 	c.writeCount(c.count)
 }
 func (c *CountingFileBackedBitSet) Close() {
 	c.Flush()
-	c.FileBackedBitSet.Close()
+	c.BlobBackedBitSet.Close()
 }
 
 func (c *CountingFileBackedBitSet) DataByteLength() int64 {
@@ -133,7 +124,7 @@ func (c *CountingFileBackedBitSet) DataByteLength() int64 {
 }
 
 func (c *CountingFileBackedBitSet) ExportBytes() []byte {
-	return c.FileBackedBitSet.ExportBytes()[:c.DataByteLength()]
+	return c.BlobBackedBitSet.ExportBytes()[:c.DataByteLength()]
 }
 
 func (c *CountingFileBackedBitSet) ToSimple() *SimpleBitSet {

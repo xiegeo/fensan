@@ -8,7 +8,7 @@ import (
 )
 
 type randomFlushingBitSet struct {
-	FileBackedBitSet
+	BlobBackedBitSet
 	r *rand.Rand
 }
 
