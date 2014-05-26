@@ -29,6 +29,9 @@ func (b *randomFlushingBitSet) Unset(i int) {
 func testFileBacked(cap int, t *testing.T) {
 	fileName := fmt.Sprintf(".testfile_%v", cap)
 	nfb := OpenFileBacked(fileName, cap)
+	if cap > 64 {
+		nfb.blob = MakeFullBuffered(nfb.blob)
+	}
 	s := &randomFlushingBitSet{*nfb, rand.New(rand.NewSource(0))}
 	checkAll(t, s, cap)
 	if s.Capacity() != cap {

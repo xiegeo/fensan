@@ -25,12 +25,13 @@ type Blob interface {
 }
 
 type fileBlob struct {
-	f    *os.File
-	size int64
+	f            *os.File
+	size         int64
+	suppressSync bool
 }
 
 func NewBlobFromFile(file *os.File, size int64) Blob {
-	return &fileBlob{file, size}
+	return &fileBlob{file, size, true}
 }
 
 func (f *fileBlob) Size() int64 {
@@ -51,9 +52,14 @@ func (f *fileBlob) WriteAt(b []byte, off int64) {
 	if n != len(b) || err != nil {
 		panic(fmt.Errorf("can't WriteAt:%v, %v, %v", off, n, err))
 	}
+	f.suppressSync = false
 }
 
 func (f *fileBlob) Sync() {
+	if f.suppressSync {
+		return
+	}
+	f.suppressSync = true
 	err := f.f.Sync()
 	if err != nil {
 		panic(err)
@@ -112,4 +118,39 @@ func (s *subBlob) Sync() {
 
 func (s *subBlob) Close() {
 	s.blob = nil
+}
+
+type fullBufferBlob struct {
+	blob Blob
+	buf  []byte
+}
+
+func MakeFullBuffered(blob Blob) Blob {
+	buf := make([]byte, blob.Size())
+	blob.ReadAt(buf, 0)
+	return &fullBufferBlob{blob, buf}
+}
+
+func (f *fullBufferBlob) Size() int64 {
+	return f.blob.Size()
+}
+
+func (f *fullBufferBlob) ReadAt(b []byte, off int64) {
+	assertInRange(b, off, f.Size())
+	copy(b, f.buf[off:])
+}
+
+func (f *fullBufferBlob) WriteAt(b []byte, off int64) {
+	f.blob.WriteAt(b, off)
+	copy(f.buf[off:], b)
+}
+
+func (f *fullBufferBlob) Sync() {
+	f.blob.Sync()
+}
+
+func (f *fullBufferBlob) Close() {
+	f.blob.Close()
+	f.blob = nil
+	f.buf = nil
 }

@@ -18,8 +18,7 @@ it should only flash after the main data flushes.
 
 
 Currently, it appears that file read can be an expansive operation,
-cached or not. A solution is pushed back until usage pattern is
-more apparent.
+cached or not. Use MakeFullBuffered.
 */
 type BlobBackedBitSet struct {
 	blob    Blob

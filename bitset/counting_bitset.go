@@ -13,7 +13,8 @@ const (
 
 type CountingBitSet struct {
 	BlobBackedBitSet
-	count int64
+	count          int64
+	lastCountWrite int64
 }
 
 func (c *CountingBitSet) readCount() int64 {
@@ -28,11 +29,15 @@ func (c *CountingBitSet) readCount() int64 {
 }
 
 func (c *CountingBitSet) writeCount(count int64) {
+	if c.lastCountWrite == count {
+		return
+	}
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.LittleEndian, count)
 	if err != nil {
 		panic(err)
 	}
+	c.lastCountWrite = count
 	c.blob.WriteAt(buf.Bytes(), int64(c.Capacity()+7)/8)
 }
 
@@ -72,8 +77,9 @@ func NewCounting(blob Blob, capacity int) *CountingBitSet {
 	if blob.Size() != int64(capacity+countBits+7)/8 {
 		panic("blob of wrong size")
 	}
-	counting := &CountingBitSet{*NewBlobBacked(blob, capacity+countBits), 0}
+	counting := &CountingBitSet{BlobBackedBitSet: *NewBlobBacked(blob, capacity+countBits)}
 	count := counting.readCount()
+	counting.lastCountWrite = count
 	if count == -1 {
 		count = counting.recount()
 	}
