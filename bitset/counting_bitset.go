@@ -3,22 +3,22 @@ package bitset
 import (
 	"bytes"
 	"encoding/binary"
-	_ "os"
+	"log"
 )
 
 const (
-	COUNT_BITS  = 64
-	COUNT_BYTES = COUNT_BITS / 8
+	countBits  = 64
+	countBytes = countBits / 8
 )
 
-type CountingFileBackedBitSet struct {
+type CountingBitSet struct {
 	BlobBackedBitSet
 	count int64
 }
 
-func (c *CountingFileBackedBitSet) readCount() int64 {
+func (c *CountingBitSet) readCount() int64 {
 	count := int64(0)
-	buf := make([]byte, COUNT_BYTES)
+	buf := make([]byte, countBytes)
 	c.blob.ReadAt(buf, int64(c.Capacity()+7)/8)
 	err := binary.Read(bytes.NewBuffer(buf), binary.LittleEndian, &count)
 	if err != nil {
@@ -27,7 +27,7 @@ func (c *CountingFileBackedBitSet) readCount() int64 {
 	return count
 }
 
-func (c *CountingFileBackedBitSet) writeCount(count int64) {
+func (c *CountingBitSet) writeCount(count int64) {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.LittleEndian, count)
 	if err != nil {
@@ -36,7 +36,9 @@ func (c *CountingFileBackedBitSet) writeCount(count int64) {
 	c.blob.WriteAt(buf.Bytes(), int64(c.Capacity()+7)/8)
 }
 
-func (c *CountingFileBackedBitSet) recount() int64 {
+func (c *CountingBitSet) recount() int64 {
+	log.Println("recount started on bitset of capacity:", c.Capacity(),
+		" this should only happen after a crash")
 	if len(c.changes) != 0 {
 		panic("recount can not be used with changes")
 	}
@@ -61,9 +63,16 @@ func (c *CountingFileBackedBitSet) recount() int64 {
 	return count
 }
 
-func OpenCountingFileBacked(fileName string, capacity int) *CountingFileBackedBitSet {
-	fileBacked := OpenFileBacked(fileName, capacity+COUNT_BITS)
-	counting := &CountingFileBackedBitSet{*fileBacked, 0}
+func OpenCountingFileBacked(fileName string, capacity int) *CountingBitSet {
+	fileBacked := OpenFileBacked(fileName, capacity+countBits)
+	return NewCounting(fileBacked.blob, capacity)
+}
+
+func NewCounting(blob Blob, capacity int) *CountingBitSet {
+	if blob.Size() != int64(capacity+countBits+7)/8 {
+		panic("blob of wrong size")
+	}
+	counting := &CountingBitSet{*NewBlobBacked(blob, capacity+countBits), 0}
 	count := counting.readCount()
 	if count == -1 {
 		count = counting.recount()
@@ -72,17 +81,17 @@ func OpenCountingFileBacked(fileName string, capacity int) *CountingFileBackedBi
 	return counting
 }
 
-func (c *CountingFileBackedBitSet) Capacity() int { return c.bits - COUNT_BITS }
+func (c *CountingBitSet) Capacity() int { return c.bits - countBits }
 
-func (c *CountingFileBackedBitSet) Count() int {
+func (c *CountingBitSet) Count() int {
 	return int(c.count)
 }
 
-func (c *CountingFileBackedBitSet) Full() bool {
+func (c *CountingBitSet) Full() bool {
 	return c.Count() == c.Capacity()
 }
 
-func (c *CountingFileBackedBitSet) Set(i int) {
+func (c *CountingBitSet) Set(i int) {
 	if c.Get(i) {
 		return
 	} else {
@@ -94,7 +103,7 @@ func (c *CountingFileBackedBitSet) Set(i int) {
 	}
 }
 
-func (c *CountingFileBackedBitSet) Unset(i int) {
+func (c *CountingBitSet) Unset(i int) {
 	if !c.Get(i) {
 		return
 	} else {
@@ -106,27 +115,34 @@ func (c *CountingFileBackedBitSet) Unset(i int) {
 	}
 }
 
-func (c *CountingFileBackedBitSet) Flush() {
+func (c *CountingBitSet) Sync() {
+	c.Flush()
+	c.BlobBackedBitSet.Sync()
+	c.writeCount(c.count)
+}
+
+func (c *CountingBitSet) Flush() {
 	if len(c.changes) == 0 {
 		return
 	}
 	c.writeCount(-1) // mark count as dirty
 	c.BlobBackedBitSet.Flush()
-	c.writeCount(c.count)
+	//Flush does not guarantee write to disk, only write back count after sync
 }
-func (c *CountingFileBackedBitSet) Close() {
-	c.Flush()
+
+func (c *CountingBitSet) Close() {
+	c.Sync()
 	c.BlobBackedBitSet.Close()
 }
 
-func (c *CountingFileBackedBitSet) DataByteLength() int64 {
+func (c *CountingBitSet) DataByteLength() int64 {
 	return int64(c.Capacity()+8-1) / 8
 }
 
-func (c *CountingFileBackedBitSet) ExportBytes() []byte {
+func (c *CountingBitSet) ExportBytes() []byte {
 	return c.BlobBackedBitSet.ExportBytes()[:c.DataByteLength()]
 }
 
-func (c *CountingFileBackedBitSet) ToSimple() *SimpleBitSet {
+func (c *CountingBitSet) ToSimple() *SimpleBitSet {
 	return NewSimpleFromBytes(c.Capacity(), c.ExportBytes())
 }
