@@ -65,6 +65,7 @@ func (f *fileBlob) Close() {
 	if err != nil {
 		panic(err)
 	}
+	f.f = nil
 }
 
 func assertInRange(buf []byte, off int64, size int64) {
@@ -74,4 +75,41 @@ func assertInRange(buf []byte, off int64, size int64) {
 	if int64(len(buf))+off > size {
 		panic(fmt.Errorf("out of range:%v + %v > %v", len(buf), off, size))
 	}
+}
+
+type subBlob struct {
+	blob  Blob
+	start int64
+	size  int64
+}
+
+func SplitBlob(b Blob, at int64) (left, right Blob) {
+	if at <= 0 || at >= b.Size() {
+		panic("index out of range")
+	}
+	left = &subBlob{b, 0, at}
+	right = &subBlob{b, at, b.Size() - at}
+	return
+}
+
+func (s *subBlob) Size() int64 {
+	return s.size
+}
+
+func (s *subBlob) ReadAt(b []byte, off int64) {
+	assertInRange(b, off, s.size)
+	s.blob.ReadAt(b, off+s.start)
+}
+
+func (s *subBlob) WriteAt(b []byte, off int64) {
+	assertInRange(b, off, s.size)
+	s.blob.WriteAt(b, off+s.start)
+}
+
+func (s *subBlob) Sync() {
+	s.blob.Sync()
+}
+
+func (s *subBlob) Close() {
+	s.blob = nil
 }
