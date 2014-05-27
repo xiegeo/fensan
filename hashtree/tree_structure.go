@@ -148,14 +148,14 @@ func sls(from, to, width Nodes) [][2]Nodes {
 		return nil
 	}
 	if from == 0 {
-		dev := expb(logb(to + 1))
+		dev := Nodes(highBitMask(uint32(to + 1)))
 		//log.Println(from,to,width,dev);
 		if to == width-1 || to == dev-1 {
 			return [][2]Nodes{{from, to}}
 		}
 		return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev), dev))
 	} else {
-		dev := expb(logb(width - 1))
+		dev := Nodes(highBitMask(uint32(width - 1)))
 		//log.Println(from,to,width,dev);
 		if from < dev {
 			if to < dev {
@@ -174,32 +174,6 @@ func mergeR(a [][2]Nodes, b [][2]Nodes) [][2]Nodes {
 	copy(result, a)
 	copy(result[len(a):], b)
 	return result
-}
-
-func logb(n Nodes) Nodes {
-	i := Nodes(0)
-	for ; n >= 16; i += 5 {
-		n /= 32
-	}
-	for ; n > 0; i++ {
-		n /= 2
-	}
-	return i
-}
-
-func expb(n Nodes) Nodes {
-	if n == 0 {
-		return 0
-	}
-	n--
-	i := Nodes(1)
-	for ; n >= 5; i *= 32 {
-		n -= 5
-	}
-	for ; n > 0; i *= 2 {
-		n--
-	}
-	return i
 }
 
 func shiftsls(sls [][2]Nodes, delta Nodes) [][2]Nodes {
