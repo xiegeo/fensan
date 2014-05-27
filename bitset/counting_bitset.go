@@ -8,7 +8,7 @@ import (
 
 const (
 	countBits  = 64
-	countBytes = countBits / 8
+	CountBytes = countBits / 8
 )
 
 type CountingBitSet struct {
@@ -19,7 +19,7 @@ type CountingBitSet struct {
 
 func (c *CountingBitSet) readCount() int64 {
 	count := int64(0)
-	buf := make([]byte, countBytes)
+	buf := make([]byte, CountBytes)
 	c.blob.ReadAt(buf, int64(c.Capacity()+7)/8)
 	err := binary.Read(bytes.NewBuffer(buf), binary.LittleEndian, &count)
 	if err != nil {

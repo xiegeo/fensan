@@ -1,5 +1,20 @@
 package bitset
 
+func FindOffBitFrom(blob Blob, fromBit, length int) (index int) {
+	fromByte := (fromBit + 7) / 8
+	sizeByte := (fromBit+length+7)/8 - fromByte
+	sub := SubBlob(blob, int64(fromByte), int64(sizeByte))
+	//sub = MakeFullBuffered(sub)
+	startBitOffset := fromBit - fromByte*8
+	subset := NewBlobBacked(sub, startBitOffset+length)
+	for i := startBitOffset; i < startBitOffset+length; i++ {
+		if !subset.Get(i) {
+			return i - startBitOffset
+		}
+	}
+	return -1
+}
+
 // a bitset for list the index of 0s
 type NextZeroBitSet struct {
 	*SimpleBitSet

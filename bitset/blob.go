@@ -24,6 +24,11 @@ type Blob interface {
 	Close()
 }
 
+//like io.Closer, but without error
+type Closer interface {
+	Close()
+}
+
 type fileBlob struct {
 	f            *os.File
 	size         int64
@@ -93,9 +98,13 @@ func SplitBlob(b Blob, at int64) (left, right Blob) {
 	if at <= 0 || at >= b.Size() {
 		panic("index out of range")
 	}
-	left = &subBlob{b, 0, at}
-	right = &subBlob{b, at, b.Size() - at}
+	left = SubBlob(b, 0, at)
+	right = SubBlob(b, at, b.Size() - at)
 	return
+}
+
+func SubBlob(b Blob, from, size int64) Blob{
+	return &subBlob{b, from, size}
 }
 
 func (s *subBlob) Size() int64 {

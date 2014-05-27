@@ -69,7 +69,7 @@ func HashNumber(leafs Nodes, l Level, n Nodes) int64 {
 	return int64(sum + n)
 }
 
-//HashTreeSize is the total number of notes in a tree
+//HashTreeSize is the total number of nodes in a tree
 func HashTreeSize(leafs Nodes) int64 {
 	return HashNumber(leafs, Levels(leafs), 0)
 }

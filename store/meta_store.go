@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+
+	"github.com/xiegeo/fensan/bitset"
 	ht "github.com/xiegeo/fensan/hashtree"
 )
 
@@ -49,26 +51,31 @@ func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.No
 	return
 }
 
-func (m *metaStore) getHashBlob(key HLKey) (Blob, ht.Nodes) {
-	fileBlobs := ht.LevelWidth(ht.I.Nodes(key.Length()), m.minLevel-1)
-	nodesInTree := ht.HashTreeSize(fileBlobs)
-	return m.hashStore.Get(key.Hash(), hashSize*nodesInTree), fileBlobs
+func (m *metaStore) mixedBlobSizes(key HLKey) (fileBlobs ht.Nodes, blobBytes, hashBytes, treeSize int64) {
+	fileBlobs = ht.LevelWidth(ht.I.Nodes(key.Length()), m.minLevel-1)
+	hashBytes = int64(fileBlobs) * hashSize
+	treeSize = ht.HashTreeSize(fileBlobs)
+	blobBytes = hashBytes + (treeSize+7)/8 + bitset.CountBytes
+	return
+}
+
+func (m *metaStore) getHashBlob(key HLKey) (ht.Nodes, Blob, *bitset.CountingBitSet, bitset.Closer) {
+	fileBlobs, blobBytes, hashBytes, treeSize := m.mixedBlobSizes(key)
+	mixed := m.hashStore.Get(key.Hash(), blobBytes)
+	hashes, countingBlob := bitset.SplitBlob(mixed, hashBytes)
+	countingBlob = bitset.MakeFullBuffered(countingBlob)
+	counting := bitset.NewCounting(countingBlob, int(treeSize))
+	return fileBlobs, hashes, counting, mixed
 }
 
 func (m *metaStore) GetInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) error {
 	n, rebased := m.asserInRange(key, hs, level, off)
-	blob, fileBlobs := m.getHashBlob(key)
-	blob.ReadAt(hs, hashSize*ht.HashPosition(fileBlobs, rebased, off))
-	for i := ht.Nodes(0); i < n; i++ { //check for unfilled hashes
-		h := hs[i*hashSize : hashSize]
-		for j := 0; j < hashSize; j++ {
-			if h[j] != 0 {
-				goto next
-			}
-		}
+	fileBlobs, hashes, countingSet, closer := m.getHashBlob(key)
+	defer closer.Close()
+	if countingSet.Count() != int(n) {
 		return fmt.Errorf("hash incomplete")
-	next:
 	}
+	hashes.ReadAt(hs, hashSize*ht.HashPosition(fileBlobs, rebased, off))
 	return nil
 }
 
