@@ -1,6 +1,7 @@
 package hashtree
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -100,4 +101,111 @@ func SplitLength(b int64) (l, r int64) {
 		r = b - l
 	}
 	return
+}
+
+//Split inner hashes based on highest derivable ancestors
+func SplitLocalSummable(hashes []byte, hashSize int, levelWidth Nodes, off Nodes) [][]byte {
+	length := Nodes(len(hashes) / hashSize)
+	from := off
+	to := from + length - 1
+	ranges := slsUntrusted(from, to, levelWidth)
+	if ranges == nil {
+		return nil
+	}
+	return split(hashes, hashSize, off, ranges)
+}
+
+func split(b []byte, hashSize int, off Nodes, ranges [][2]Nodes) [][]byte {
+	r := make([][]byte, len(ranges))
+	for i, v := range ranges {
+		fb := int((v[0] + off)) * hashSize
+		tb := int((v[1] + off)) * hashSize
+		r[i] = b[fb:tb]
+	}
+	return r
+}
+
+// the input maybe gernerated by an adversary, return nil instead of panic that check coding errors
+func slsUntrusted(from, to, width Nodes) [][2]Nodes {
+	if from > to || to >= width {
+		return nil
+	} else {
+		return sls(from, to, width)
+	}
+}
+
+func sls(from, to, width Nodes) [][2]Nodes {
+	from = (from + 1) / 2 * 2
+	if from > to || to >= width {
+		panic(fmt.Sprintf("from:%v, to:%v, width:%v", from, to, width))
+	}
+
+	if from == to {
+		//there souldn't be any singles, unless it is the last one and even
+		if from == width-1 && from%2 == 0 {
+			return [][2]Nodes{{from, to}}
+		}
+		return nil
+	}
+	if from == 0 {
+		dev := expb(logb(to + 1))
+		//log.Println(from,to,width,dev);
+		if to == width-1 || to == dev-1 {
+			return [][2]Nodes{{from, to}}
+		}
+		return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev), dev))
+	} else {
+		dev := expb(logb(width - 1))
+		//log.Println(from,to,width,dev);
+		if from < dev {
+			if to < dev {
+				return sls(from, to, dev)
+			} else {
+				return mergeR(sls(from, dev-1, dev), shiftsls(sls(0, to-dev, width-dev), dev))
+			}
+		} else {
+			return shiftsls(sls(from-dev, to-dev, width-dev), dev)
+		}
+	}
+}
+
+func mergeR(a [][2]Nodes, b [][2]Nodes) [][2]Nodes {
+	result := make([][2]Nodes, len(a)+len(b))
+	copy(result, a)
+	copy(result[len(a):], b)
+	return result
+}
+
+func logb(n Nodes) Nodes {
+	i := Nodes(0)
+	for ; n >= 16; i += 5 {
+		n /= 32
+	}
+	for ; n > 0; i++ {
+		n /= 2
+	}
+	return i
+}
+
+func expb(n Nodes) Nodes {
+	if n == 0 {
+		return 0
+	}
+	n--
+	i := Nodes(1)
+	for ; n >= 5; i *= 32 {
+		n -= 5
+	}
+	for ; n > 0; i *= 2 {
+		n--
+	}
+	return i
+}
+
+func shiftsls(sls [][2]Nodes, delta Nodes) [][2]Nodes {
+	for i := 0; i < len(sls); i++ {
+		sls[i][0] += delta
+		sls[i][1] += delta
+	}
+	return sls
 }
