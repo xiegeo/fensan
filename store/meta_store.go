@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/xiegeo/fensan/bitset"
@@ -30,7 +31,7 @@ func (m *metaStore) InnerHashMinLevel() ht.Level {
 	return m.minLevel
 }
 
-func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.Nodes) (n ht.Nodes, rebased ht.Level) {
+func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.Nodes) (n, lw ht.Nodes, rebased ht.Level) {
 	lhs := len(hs)
 	n, r := ht.Nodes(lhs/hashSize), lhs%hashSize
 	if n == 0 {
@@ -40,7 +41,7 @@ func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.No
 		panic("hs is not multples of hashes")
 	}
 
-	lw := ht.LevelWidth(ht.I.Nodes(key.Length()), level)
+	lw = ht.LevelWidth(ht.I.Nodes(key.Length()), level)
 	if off < 0 || off+n >= lw {
 		panic(fmt.Errorf("offset out: %v < 0 || %v + %v >= %v", off, off, n, lw))
 	}
@@ -62,6 +63,9 @@ func (m *metaStore) mixedBlobSizes(key HLKey) (fileBlobs ht.Nodes, blobBytes, ha
 func (m *metaStore) getHashBlob(key HLKey) (ht.Nodes, Blob, *bitset.CountingBitSet, bitset.Closer) {
 	fileBlobs, blobBytes, hashBytes, treeSize := m.mixedBlobSizes(key)
 	mixed := m.hashStore.Get(key.Hash(), blobBytes)
+	if mixed == nil {
+		mixed = m.hashStore.New(key.Hash(), blobBytes)
+	}
 	hashes, countingBlob := bitset.SplitBlob(mixed, hashBytes)
 	countingBlob = bitset.MakeFullBuffered(countingBlob)
 	counting := bitset.NewCounting(countingBlob, int(treeSize))
@@ -69,10 +73,10 @@ func (m *metaStore) getHashBlob(key HLKey) (ht.Nodes, Blob, *bitset.CountingBitS
 }
 
 func (m *metaStore) GetInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) error {
-	n, rebased := m.asserInRange(key, hs, level, off)
+	_, _, rebased := m.asserInRange(key, hs, level, off)
 	fileBlobs, hashes, countingSet, closer := m.getHashBlob(key)
 	defer closer.Close()
-	if countingSet.Count() != int(n) {
+	if countingSet.Count() != int(fileBlobs) {
 		return fmt.Errorf("hash incomplete")
 	}
 	hashes.ReadAt(hs, hashSize*ht.HashPosition(fileBlobs, rebased, off))
@@ -80,15 +84,70 @@ func (m *metaStore) GetInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.
 }
 
 func (m *metaStore) PutInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.Nodes) (has ht.Nodes, complete bool, err error) {
-	panic("unimplemented")
-	/*
-		n, rebased := m.asserInRange(key, hs, level, off)
-		blob, fileBlobs := m.getHashBlob(key)
-		if n != fileBlob {
-			return 0, false, fmt.Errorf("only full hash puts are supported for now. TODO: use bitset to support it")
+	_, lw, rebased := m.asserInRange(key, hs, level, off)
+	fileBlobs, hashes, countingSet, closer := m.getHashBlob(key)
+	defer closer.Close()
+	if countingSet.Count() == int(fileBlobs) {
+		//already done, so it's a no-op
+		return ht.Nodes(countingSet.Count()), true, nil
+	}
+
+	writeHash := func(rebasedL ht.Level, woff ht.Nodes, hash, left, right *ht.H256) {
+		n := int(ht.HashNumber(fileBlobs, rebasedL, woff))
+		woffBytes := int64(n * hashSize)
+		hashes.WriteAt(hash.ToBytes(), woffBytes)
+		countingSet.Set(n)
+	}
+
+	rootBuffer := make([]byte, hashSize)
+	splited := ht.SplitLocalSummable(hs, hashSize, lw, off)
+	c := ht.NewNoPadTree()
+	var sum []byte
+	for i := 0; i < len(splited); i++ {
+		s := splited[i]
+		hashHeight := ht.Levels(ht.Nodes(len(s) / hashSize))
+		rebasedRootLevel := rebased + hashHeight
+		rootOff := off >> uint(hashHeight)
+		rootPosition := int(ht.HashNumber(fileBlobs, rebasedRootLevel, rootOff))
+		if rootPosition == countingSet.Capacity() {
+			copy(rootBuffer, key.Hash()) //root is the key
+		} else if !countingSet.Get(rootPosition) {
+			goto next //don't have the root, skiped
+		} else {
+			hashes.ReadAt(rootBuffer, int64(rootPosition)*hashSize)
 		}
-		//todo: check and fill
-	*/
+		c.Write(s)
+		sum = c.Sum(nil)
+		c.Reset()
+		if bytes.Equal(sum, rootBuffer) {
+			//hashes verified, good for saving
+			c.SetInnerHashListener(func(l ht.Level, hoff ht.Nodes, hash, left, right *ht.H256) {
+				rebasedL := l + rebased
+				woff := hoff + rootOff<<uint32(rebasedRootLevel-l)
+				if rebasedL == rebasedRootLevel {
+					return
+				}
+				writeHash(rebasedL, woff, hash, left, right)
+				//propagate down nodes with single branch
+				for rebasedL > 0 &&
+					woff+1 == ht.LevelWidth(fileBlobs, rebasedL) &&
+					woff%2 == 0 {
+					rebasedL--
+					woff = ht.LevelWidth(fileBlobs, rebasedL) - 1
+					writeHash(rebasedL, woff, hash, left, right)
+				}
+			})
+			c.Write(s)
+			c.Sum(nil)
+			c.SetInnerHashListener(nil)
+			c.Reset()
+		}
+	next:
+		off += ht.Nodes(len(s) / hashSize)
+	}
+	hashes.Sync()
+	countingSet.Sync()
+	return ht.Nodes(countingSet.Count()), countingSet.Full(), nil
 }
 
 func (m *metaStore) TTLGet(key HLKey) TTL {
