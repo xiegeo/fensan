@@ -83,3 +83,4 @@ Just as a higher version number implies the coverage of content for all previous
 
 References must include "pk", "[topic]", "version", and "sign", functioning as secure [Vector clocks](http://en.wikipedia.org/wiki/Vector_clock). Such refercencs can be inclueded in content only, encrypted from servers.
 
+see also [Extended Dynamic Content Schemes](Extended Dynamic Content Schemes.md)
