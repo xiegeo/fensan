@@ -5,7 +5,7 @@
 
 The global file space consists of data identifiers, verification algrithms, and locators.
 
-Unlike https, which verifies the server providing the data (the location). FenSan verifies the data directly based on identifiers. This allows locators to choose arbitery locations and allow anyone to provide data caching services. 
+Unlike https, which verifies the server or location providing the data. FenSan verifies the data directly based on identifiers. This allows locators to choose arbitery locations and allow anyone to provide data caching services. 
 
 ### 1.a Content addressable StaticID 
 
@@ -21,3 +21,5 @@ see also [The Self Updating Document](The Self Updating Document.md), [Extended 
 
 
 ### 1.c Locators 
+
+Given a StaticID or DynamicID, locators looks for good sources. 
