@@ -31,19 +31,32 @@ Given a StaticID or DynamicID, locators looks for good sources quickly.
 
 [More on locators](Locators.md)
 
-## 2. Resource Management
+## 2. Basic Server Features
+
+### 2.1 Retain
+What the server should keep locally.
+
+[TTL based](Time To Live for Garbage Collection of Shared Storage.md)
+
+### 2.2 Subscripe 
+Retain for dynamic contents, push based, to always keep up to date.
+
+### 2.3 Proxy
+Retrave and cache remote contents on clients request. This allows well positioned servers to cache content; and clients to use less connections and imporve privacy.
+
+## 3. Resource Management
 
 Resource management primarily focuses on bandwith and storage useage. Both are shared by many users running many tasks; with variable quality, supply, and demand; and costly maintenances and expansion.
 
-### 2.1 Publishing / Backing Up / Redandency Factors
+### 3.1 Publishing / Backing Up / Redandency Factors
 
-### 2.2 Subscriping / Retraving / Caching
+### 3.2 Subscriping / Retraving / Caching
 
-### 2.3 Hierarchical / Local Networks
+### 3.3 Hierarchical / Local Networks
 
-### 2.4 Market Economy
+### 3.4 Market Economy
 
 
 
-## 3. Secrets and Identity Management
+## 4. Secrets and Identity Management
 
