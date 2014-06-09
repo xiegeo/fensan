@@ -25,13 +25,16 @@ see also [The Self Updating Document](The Self Updating Document.md), [Extended 
 
 ### 1.d Locators 
 
-Locators are what builds Fensan into a network from individual file servers, and each file/ID/Collection forms it's own connected network.
+Locators are what builds Fensan into a network from individual file servers, and each file/ID/Collection/Task forms it's own connected network.
 
 Given a StaticID or DynamicID, locators looks for good sources quickly. 
 
 [More on locators](Locators.md)
 
 ## 2. Basic Server Features
+
+### 2.0 bootstraping
+The server starts off reading a local configeration file, that helps it connect to the network. This should be the only file, other than the program itself, that it needs outside of the network or it's own database, both of which are nil on first start up.
 
 ### 2.1 Retain
 What the server should keep locally.
@@ -41,8 +44,23 @@ What the server should keep locally.
 ### 2.2 Subscripe 
 Retain for dynamic contents, push based, to always keep up to date.
 
+Server settings should be done using subscripe. This allows a cluster of servers to be configered together. Using collections, servers can share some but not all configerations.
+
 ### 2.3 Proxy
 Retrave and cache remote contents on clients request. This allows well positioned servers to cache content; and clients to use less connections and imporve privacy.
+
+### 2.4 Users
+The server need to enact user requests for the above features.
+
+
+### 2.5 Tasks
+Tasks are how the server management it self. 
+
+Transient tasks are short lived tasks that fill user requests. The task states only live in memory. The tasks can 'crash' when the server stops or when relevant clients disconnect. 
+
+Resident tasks are long lived tasks that should continue even after the server restarts. Some Resident tasks are run periodically.
+
+(Future: allow users to run arbitery programs in a sandbox. This allow new features without hard coding them in the server. )
 
 ## 3. Resource Management
 
