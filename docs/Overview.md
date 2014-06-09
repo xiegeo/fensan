@@ -70,9 +70,15 @@ Resident tasks are long lived tasks that should continue even after the server r
 
 Resource management primarily focuses on bandwith and storage useage. Both are shared by many users running many tasks; with variable quality, supply, and demand; and costly maintenances and expansion.
 
+Resource management has two sides: a client selecting from many servers, and a server selecting which clients to serve. 
+
+ 
+
 ### 3.1 Publishing / Backing Up / Redandency Factors
+Clients decide where data is stored, and how many copies exist, based on intened usage. 
 
 ### 3.2 Subscriping / Retraving / Caching
+Anyone else who know about a piece data, va a link, can copy over the data. They 
 
 ### 3.3 Hierarchical / Local Networks
 
