@@ -33,11 +33,13 @@ Given a StaticID or DynamicID, locators looks for good sources quickly.
 
 ## 2. Basic Server Features
 
+Server and clients are not differentiated by functionally. The server represents an instance that is long running, have some data a client want, or prove storage.
+
 ### 2.0 bootstraping
 The server starts off reading a local configeration file, that helps it connect to the network. This should be the only file, other than the program itself, that it needs outside of the network or it's own database, both of which are nil on first start up.
 
 ### 2.1 Retain
-What the server should keep locally.
+What the server should keep locally. Retain increase data redandency
 
 [TTL based](Time To Live for Garbage Collection of Shared Storage.md)
 
@@ -48,6 +50,8 @@ Server settings should be done using subscripe. This allows a cluster of servers
 
 ### 2.3 Proxy
 Retrave and cache remote contents on clients request. This allows well positioned servers to cache content; and clients to use less connections and imporve privacy.
+
+Cached content that are not retained are not asked to increase redandency, they can be purged whenever.
 
 ### 2.4 Users
 The server need to enact user requests for the above features.
