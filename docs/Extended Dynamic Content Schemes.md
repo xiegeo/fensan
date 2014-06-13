@@ -13,5 +13,5 @@ A possible scheme for an email like system. To not limit who can send, the publi
 
 TODO: other schemes: tag/keyword search, forum/comments
 
-To error on the sized of user privacy, servers should not provide unlimited search capblities to normal users. Only data which are specifically submited to be included in a search can be returned as a result. Even if some data appear to be formated in a dynamic content scheme, it should not be automatically include.
+To error on the sized of user privacy, servers should not provide unlimited search capblities to normal users. Only data which are specifically submited to be included in a search can be returned as a result. Even if some data appear to be formated in a dynamic content scheme, it should not be automatically include. As an example, normal users should not be able to do range requests on StaticIDs, this limit the knowledge of a StaticID to end users which have the link and server that the users use. Giving an attacker a hard time to even get the ciphertext by not implementing a feature is a win.
 

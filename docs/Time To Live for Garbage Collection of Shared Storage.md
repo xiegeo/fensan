@@ -8,14 +8,14 @@ This problem is very similar to garbage collection (GC) of managed heap, freeing
 
 When extending such a system to storage as a service. There are additional features that we would like to have.
 
-1. End user privacy: allow the user to encrypt it's document tree, but leave leafs deduplicable, without disclosing that the user is interested in those leafs. This also means the server can not block users from data it’s not supposed to access (user can access any data that it has a key for). This system assumes read rights is controlled by encryption, allowing anyone to cache a blob, using allowed bandwidth, but only those with the matching decryption key can truly read it.
+1. End user privacy: allow the user to encrypt it's document tree, but leave leafs deduplicable, _without disclosing that the user is interested in those leafs_. This also means the server can not block users from data it’s not supposed to access (user can access any data that it has a lookup key for). This system assumes read rights is controlled by encryption, allowing anyone to cache a blob, using allowed bandwidth, but only those with the matching decryption key can truly read it.
 2. Support a very large store space that can be easily subdivided without garbage collection having to transverse the whole.
 
 ## Proposal: Time To Live
 
-Simply attach a Time To Live (TTL) to storage blobs. A user can increase the time as desired. The server periodically scans TTL to remove outdated blobs. Unlike GC, this scan can be done per item.
+Simply attach a Time To Live (TTL) to storage blobs after deduplication. A user can increase the time as desired. The server periodically scans TTL to remove outdated blobs. Unlike tracing, this scan is trivial to do incrementally.
 
-The TTL should be implemented in large increments, such a month, to disassociate the time stamp from user's access time. The server can technically log that a user extended a blob's TTL, but such a log is not needed to provide service. Privacy conscious users can choose services that promise to not log. The server may still be forced to log s users or s blobs when required by law.
+The TTL should be implemented in large increments, such a month, to disassociate the time stamp from user's access time. The server can technically log that a user extended a blob's TTL, but such a log is not needed to provide service. Privacy conscious users can choose services that promise to not log. The server may still be forced to log some users or some blobs when required by law.
 
 Server implementation is vastly simplyfied over tracing. This strategy also mirrors the payment structures of online storage services (paying storage time).
 
@@ -52,5 +52,5 @@ The store should also keep track of large changes in time, to prevent unintended
 
 3. It was segmented from the network for a long time. This situation can not be detected from a time skip, but the effect and recovery is identical to 2, therefore it should be tracked and treated as such.
 
-A simple solution to such problems is for the store to be put into read only mode, with the GC stopped. This mode is turned on automatically when time skip is higher that a preconfigured setting, and can be turned back to normal mode with an administrative command, once time settings are confirmed and clients had a chance to renew TTL. 
+A simple solution to such problems is for the store to be put into read only mode, with the GC stopped. This mode is turned on automatically when time skip is higher that a preconfigured setting, and can be turned back to normal mode with an administrative command, after time settings are confirmed and clients had a chance to renew TTL. 
 

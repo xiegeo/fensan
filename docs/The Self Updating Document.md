@@ -24,7 +24,7 @@ Format
 	
 
 
-"pk" is the public key of the signer. The key infostracture is outside the scope of this document... (to do)
+"pk" is the public key of the signer. The key infostructure is outside the scope of this document... (to do)
 
 "topic" is used to allow one public key to sign many documents.
 If "topic" is left out, it is the same as empty string "". (so we don't need to seperate NULL and "")
@@ -66,7 +66,7 @@ Alice produce an document, Bob makes a local copy of the latest version.
 
 setup:
 
-- Alice gave Bob "pk, [topic], [sources]", where Alice has the private par of "pk" and intends or already publish in "pk, [topic]" on sources
+- Alice gave Bob "pk, [topic], [sources]", where Alice has the private key for "pk" and intends or already publish in "pk, [topic]" on sources
 - Bob subscribe to "pk, [topic]" on sources.
 - Alice update "pk, [topic]" on sources with increasing version number, Bob recive.
 - Bob resubscribe to "pk, [topic]" on sources when sources change.
