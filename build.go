@@ -3,7 +3,20 @@ package main
 import (
 	"fmt"
 	"os/exec"
+
+	"github.com/xiegeo/fensan/bitset"
+	"github.com/xiegeo/fensan/hashtree"
+	"github.com/xiegeo/fensan/pb"
+	"github.com/xiegeo/fensan/pconn"
+	"github.com/xiegeo/fensan/store"
 )
+
+//make sure go get gets every sub package
+var _ = bitset.CHECK_INTEX
+var _ = hashtree.HashSize
+var _ = &pb.StaticId{}
+var _ = pconn.SendBytes
+var _ = store.FileNone
 
 func main() {
 	buildProtoBuf()
