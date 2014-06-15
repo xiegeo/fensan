@@ -31,9 +31,13 @@ func main() {
 func buildProtoBuf() {
 	dir = "pb"
 	defer func() { dir = "" }()
-	err := doCmd(exec.Command("go", "test", "-v"))
+	err := doHiddenCmd(exec.Command("go", "test", "-v"))
 	if err != nil {
-		doCmd(exec.Command("protoc", "--gogo_out=.", "*.proto"))
+		fmt.Println("rebuilding .pb.go files")
+		err := doCmd(exec.Command("protoc", "--gogo_out=.", "*.proto"))
+		if err == nil {
+			fmt.Println("rebuilded .pb.go files ")
+		}
 	}
 }
 
@@ -60,5 +64,11 @@ func doCmd(cmd *exec.Cmd) error {
 		fmt.Printf("%s\n", out)
 		fmt.Printf("error:%v\n", err)
 	}
+	return err
+}
+
+func doHiddenCmd(cmd *exec.Cmd) error {
+	cmd.Dir = dir
+	_, err := cmd.CombinedOutput()
 	return err
 }
