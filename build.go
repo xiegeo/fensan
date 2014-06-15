@@ -44,7 +44,6 @@ func doCmd(cmd *exec.Cmd) error {
 	if err != nil {
 		fmt.Println(cmd.Path)
 		fmt.Println(cmd.Args)
-		fmt.Println(out)
 		fmt.Printf("%s\n", out)
 		fmt.Printf("error:%v\n", err)
 	}
