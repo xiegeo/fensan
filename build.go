@@ -35,6 +35,9 @@ func buildProtoBuf() {
 	if err != nil {
 		fmt.Println("rebuilding .pb.go files")
 		err := doCmd(exec.Command("protoc", "--gogo_out=.", "*.proto"))
+		if err != nil {
+			panic("can't rebuild, see code.google.com/p/gogoprotobuf/")
+		}
 		if err == nil {
 			fmt.Println("rebuilded .pb.go files ")
 		}
