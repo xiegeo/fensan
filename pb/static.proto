@@ -12,7 +12,10 @@ option (gogoproto.stringer_all) =  true;
 option (gogoproto.marshaler_all) = true;
 option (gogoproto.sizer_all) = true;
 option (gogoproto.unmarshaler_all) = true;
- 
+
+option (gogoproto.face_all) = true; option (gogoproto.goproto_getters_all) = false;
+
+
 message StaticId {
 	required bytes hash = 1 [(gogoproto.nullable) = false];
 	required int64 length = 2 [(gogoproto.nullable) = false];

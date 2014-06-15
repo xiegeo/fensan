@@ -33,6 +33,8 @@ import sort "sort"
 import strconv "strconv"
 import reflect1 "reflect"
 
+import code_google_com_p_gogoprotobuf_proto2 "code.google.com/p/gogoprotobuf/proto"
+
 import bytes "bytes"
 
 // Reference proto, json, and math imports to suppress error if they are not otherwise used.
@@ -48,20 +50,6 @@ type StaticId struct {
 
 func (m *StaticId) Reset()      { *m = StaticId{} }
 func (*StaticId) ProtoMessage() {}
-
-func (m *StaticId) GetHash() []byte {
-	if m != nil {
-		return m.Hash
-	}
-	return nil
-}
-
-func (m *StaticId) GetLength() int64 {
-	if m != nil {
-		return m.Length
-	}
-	return 0
-}
 
 func init() {
 }
@@ -275,6 +263,36 @@ func extensionToGoStringStatic(e map[int32]code_google_com_p_gogoprotobuf_proto1
 	s += strings1.Join(ss, ",") + "}"
 	return s
 }
+
+type StaticIdFace interface {
+	Proto() code_google_com_p_gogoprotobuf_proto2.Message
+	GetHash() []byte
+	GetLength() int64
+}
+
+func (this *StaticId) Proto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return this
+}
+
+func (this *StaticId) TestProto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return NewStaticIdFromFace(this)
+}
+
+func (this *StaticId) GetHash() []byte {
+	return this.Hash
+}
+
+func (this *StaticId) GetLength() int64 {
+	return this.Length
+}
+
+func NewStaticIdFromFace(that StaticIdFace) *StaticId {
+	this := &StaticId{}
+	this.Hash = that.GetHash()
+	this.Length = that.GetLength()
+	return this
+}
+
 func (this *StaticId) Equal(that interface{}) bool {
 	if that == nil {
 		if this == nil {

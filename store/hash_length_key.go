@@ -1,6 +1,10 @@
 package store
 
-import ht "github.com/xiegeo/fensan/hashtree"
+import (
+	"code.google.com/p/gogoprotobuf/proto"
+	ht "github.com/xiegeo/fensan/hashtree"
+	"github.com/xiegeo/fensan/pb"
+)
 
 //HLKey is the hash and length of some data. Used to look up data in a high level
 //database.
@@ -19,9 +23,9 @@ import ht "github.com/xiegeo/fensan/hashtree"
 //
 type HLKey interface {
 	//Hash returns the hash of refereced. Do not modify the returned contests
-	Hash() []byte
+	GetHash() []byte
 	//Length returns the length of refereced file in bytes
-	Length() int64
+	GetLength() int64
 	//FullBytes is used when a key need to include length, as an attacker might
 	//claim the existence of a file of the same hash but different size.
 	//Do not modify the returned contests
@@ -41,15 +45,19 @@ func NewHLKey(hash []byte, length int64) HLKey {
 	return &hLKey{fb, length}
 }
 
+func (k *hLKey) Proto() proto.Message {
+	return pb.NewStaticIdFromFace(k)
+}
+
 func (k *hLKey) FullBytes() []byte {
 	return k.fullBytes
 }
 
-func (k *hLKey) Hash() []byte {
+func (k *hLKey) GetHash() []byte {
 	return k.fullBytes[:ht.HashSize]
 }
 
-func (k *hLKey) Length() int64 {
+func (k *hLKey) GetLength() int64 {
 	return k.length
 }
 

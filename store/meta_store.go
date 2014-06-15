@@ -41,7 +41,7 @@ func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.No
 		panic("hs is not multples of hashes")
 	}
 
-	lw = ht.LevelWidth(ht.I.Nodes(key.Length()), level)
+	lw = ht.LevelWidth(ht.I.Nodes(key.GetLength()), level)
 	if off < 0 || off+n >= lw {
 		panic(fmt.Errorf("offset out: %v < 0 || %v + %v >= %v", off, off, n, lw))
 	}
@@ -53,7 +53,7 @@ func (m *metaStore) asserInRange(key HLKey, hs []byte, level ht.Level, off ht.No
 }
 
 func (m *metaStore) mixedBlobSizes(key HLKey) (fileBlobs ht.Nodes, blobBytes, hashBytes, treeSize int64) {
-	fileBlobs = ht.LevelWidth(ht.I.Nodes(key.Length()), m.minLevel-1)
+	fileBlobs = ht.LevelWidth(ht.I.Nodes(key.GetLength()), m.minLevel-1)
 	hashBytes = int64(fileBlobs) * hashSize
 	treeSize = ht.HashTreeSize(fileBlobs)
 	blobBytes = hashBytes + (treeSize+7)/8 + bitset.CountBytes
@@ -62,9 +62,9 @@ func (m *metaStore) mixedBlobSizes(key HLKey) (fileBlobs ht.Nodes, blobBytes, ha
 
 func (m *metaStore) getHashBlob(key HLKey) (ht.Nodes, Blob, *bitset.CountingBitSet, bitset.Closer) {
 	fileBlobs, blobBytes, hashBytes, treeSize := m.mixedBlobSizes(key)
-	mixed := m.hashStore.Get(key.Hash(), blobBytes)
+	mixed := m.hashStore.Get(key.GetHash(), blobBytes)
 	if mixed == nil {
-		mixed = m.hashStore.New(key.Hash(), blobBytes)
+		mixed = m.hashStore.New(key.GetHash(), blobBytes)
 	}
 	hashes, countingBlob := bitset.SplitBlob(mixed, hashBytes)
 	countingBlob = bitset.MakeFullBuffered(countingBlob)
@@ -110,7 +110,7 @@ func (m *metaStore) PutInnerHashes(key HLKey, hs []byte, level ht.Level, off ht.
 		rootOff := off >> uint(hashHeight)
 		rootPosition := int(ht.HashNumber(fileBlobs, rebasedRootLevel, rootOff))
 		if rootPosition == countingSet.Capacity() {
-			copy(rootBuffer, key.Hash()) //root is the key
+			copy(rootBuffer, key.GetHash()) //root is the key
 		} else if !countingSet.Get(rootPosition) {
 			goto next //don't have the root, skiped
 		} else {
@@ -167,7 +167,7 @@ func (m *metaStore) TTLSetAtleast(key HLKey, freeFrom, until TTL) (byteMonth int
 	}
 	buyMonth := freeFrom.MonthUntil(until)
 	m.ttlStore.Set(key.FullBytes(), until.Bytes())
-	return int64(buyMonth) * key.Length()
+	return int64(buyMonth) * key.GetLength()
 	//todo: check dedup
 }
 
