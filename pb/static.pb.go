@@ -10,6 +10,10 @@
 
 	It has these top-level messages:
 		StaticId
+		InnerHashes
+		FileData
+		HaveFile
+		StaticTransport
 */
 package pb
 
@@ -50,6 +54,49 @@ type StaticId struct {
 
 func (m *StaticId) Reset()      { *m = StaticId{} }
 func (*StaticId) ProtoMessage() {}
+
+type InnerHashes struct {
+	Height           int32  `protobuf:"varint,1,req,name=height" json:"height"`
+	From             int32  `protobuf:"varint,2,req,name=from" json:"from"`
+	Length           *int32 `protobuf:"varint,3,opt,name=length" json:"length,omitempty"`
+	Hashes           []byte `protobuf:"bytes,8,opt,name=hashes" json:"hashes,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *InnerHashes) Reset()      { *m = InnerHashes{} }
+func (*InnerHashes) ProtoMessage() {}
+
+type FileData struct {
+	From             int64  `protobuf:"varint,2,req,name=from" json:"from"`
+	Length           *int32 `protobuf:"varint,3,opt,name=length" json:"length,omitempty"`
+	Data             []byte `protobuf:"bytes,8,opt,name=data" json:"data,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *FileData) Reset()      { *m = FileData{} }
+func (*FileData) ProtoMessage() {}
+
+type HaveFile struct {
+	HaveRequest      *bool  `protobuf:"varint,1,opt,name=have_request" json:"have_request,omitempty"`
+	Complete         *bool  `protobuf:"varint,2,opt,name=complete" json:"complete,omitempty"`
+	XXX_unrecognized []byte `json:"-"`
+}
+
+func (m *HaveFile) Reset()      { *m = HaveFile{} }
+func (*HaveFile) ProtoMessage() {}
+
+type StaticTransport struct {
+	Id               *StaticId      `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Have             *HaveFile      `protobuf:"bytes,2,opt,name=have" json:"have,omitempty"`
+	HashAsk          []*InnerHashes `protobuf:"bytes,4,rep,name=hash_ask" json:"hash_ask,omitempty"`
+	HashSend         []*InnerHashes `protobuf:"bytes,5,rep,name=hash_send" json:"hash_send,omitempty"`
+	DataAsk          []*FileData    `protobuf:"bytes,6,rep,name=data_ask" json:"data_ask,omitempty"`
+	DataSend         []*FileData    `protobuf:"bytes,7,rep,name=data_send" json:"data_send,omitempty"`
+	XXX_unrecognized []byte         `json:"-"`
+}
+
+func (m *StaticTransport) Reset()      { *m = StaticTransport{} }
+func (*StaticTransport) ProtoMessage() {}
 
 func init() {
 }
@@ -132,6 +179,479 @@ func (m *StaticId) Unmarshal(data []byte) error {
 	}
 	return nil
 }
+func (m *InnerHashes) Unmarshal(data []byte) error {
+	l := len(data)
+	index := 0
+	for index < l {
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if index >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[index]
+			index++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				m.Height |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				m.From |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				v |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Length = &v
+		case 8:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Hashes = append(m.Hashes, data[index:postIndex]...)
+			index = postIndex
+		default:
+			var sizeOfWire int
+			for {
+				sizeOfWire++
+				wire >>= 7
+				if wire == 0 {
+					break
+				}
+			}
+			index -= sizeOfWire
+			skippy, err := code_google_com_p_gogoprotobuf_proto.Skip(data[index:])
+			if err != nil {
+				return err
+			}
+			if (index + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, data[index:index+skippy]...)
+			index += skippy
+		}
+	}
+	return nil
+}
+func (m *FileData) Unmarshal(data []byte) error {
+	l := len(data)
+	index := 0
+	for index < l {
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if index >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[index]
+			index++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		switch fieldNum {
+		case 2:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				m.From |= (int64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				v |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Length = &v
+		case 8:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				byteLen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + byteLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Data = append(m.Data, data[index:postIndex]...)
+			index = postIndex
+		default:
+			var sizeOfWire int
+			for {
+				sizeOfWire++
+				wire >>= 7
+				if wire == 0 {
+					break
+				}
+			}
+			index -= sizeOfWire
+			skippy, err := code_google_com_p_gogoprotobuf_proto.Skip(data[index:])
+			if err != nil {
+				return err
+			}
+			if (index + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, data[index:index+skippy]...)
+			index += skippy
+		}
+	}
+	return nil
+}
+func (m *HaveFile) Unmarshal(data []byte) error {
+	l := len(data)
+	index := 0
+	for index < l {
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if index >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[index]
+			index++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.HaveRequest = &b
+		case 2:
+			if wireType != 0 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				v |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.Complete = &b
+		default:
+			var sizeOfWire int
+			for {
+				sizeOfWire++
+				wire >>= 7
+				if wire == 0 {
+					break
+				}
+			}
+			index -= sizeOfWire
+			skippy, err := code_google_com_p_gogoprotobuf_proto.Skip(data[index:])
+			if err != nil {
+				return err
+			}
+			if (index + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, data[index:index+skippy]...)
+			index += skippy
+		}
+	}
+	return nil
+}
+func (m *StaticTransport) Unmarshal(data []byte) error {
+	l := len(data)
+	index := 0
+	for index < l {
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if index >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := data[index]
+			index++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Id == nil {
+				m.Id = &StaticId{}
+			}
+			if err := m.Id.Unmarshal(data[index:postIndex]); err != nil {
+				return err
+			}
+			index = postIndex
+		case 2:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Have == nil {
+				m.Have = &HaveFile{}
+			}
+			if err := m.Have.Unmarshal(data[index:postIndex]); err != nil {
+				return err
+			}
+			index = postIndex
+		case 4:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HashAsk = append(m.HashAsk, &InnerHashes{})
+			m.HashAsk[len(m.HashAsk)-1].Unmarshal(data[index:postIndex])
+			index = postIndex
+		case 5:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.HashSend = append(m.HashSend, &InnerHashes{})
+			m.HashSend[len(m.HashSend)-1].Unmarshal(data[index:postIndex])
+			index = postIndex
+		case 6:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DataAsk = append(m.DataAsk, &FileData{})
+			m.DataAsk[len(m.DataAsk)-1].Unmarshal(data[index:postIndex])
+			index = postIndex
+		case 7:
+			if wireType != 2 {
+				return code_google_com_p_gogoprotobuf_proto.ErrWrongType
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if index >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := data[index]
+				index++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			postIndex := index + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DataSend = append(m.DataSend, &FileData{})
+			m.DataSend[len(m.DataSend)-1].Unmarshal(data[index:postIndex])
+			index = postIndex
+		default:
+			var sizeOfWire int
+			for {
+				sizeOfWire++
+				wire >>= 7
+				if wire == 0 {
+					break
+				}
+			}
+			index -= sizeOfWire
+			skippy, err := code_google_com_p_gogoprotobuf_proto.Skip(data[index:])
+			if err != nil {
+				return err
+			}
+			if (index + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, data[index:index+skippy]...)
+			index += skippy
+		}
+	}
+	return nil
+}
 func (this *StaticId) String() string {
 	if this == nil {
 		return "nil"
@@ -139,6 +659,61 @@ func (this *StaticId) String() string {
 	s := strings.Join([]string{`&StaticId{`,
 		`Hash:` + fmt.Sprintf("%v", this.Hash) + `,`,
 		`Length:` + fmt.Sprintf("%v", this.Length) + `,`,
+		`XXX_unrecognized:` + fmt.Sprintf("%v", this.XXX_unrecognized) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *InnerHashes) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&InnerHashes{`,
+		`Height:` + fmt.Sprintf("%v", this.Height) + `,`,
+		`From:` + fmt.Sprintf("%v", this.From) + `,`,
+		`Length:` + valueToStringStatic(this.Length) + `,`,
+		`Hashes:` + valueToStringStatic(this.Hashes) + `,`,
+		`XXX_unrecognized:` + fmt.Sprintf("%v", this.XXX_unrecognized) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *FileData) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&FileData{`,
+		`From:` + fmt.Sprintf("%v", this.From) + `,`,
+		`Length:` + valueToStringStatic(this.Length) + `,`,
+		`Data:` + valueToStringStatic(this.Data) + `,`,
+		`XXX_unrecognized:` + fmt.Sprintf("%v", this.XXX_unrecognized) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *HaveFile) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&HaveFile{`,
+		`HaveRequest:` + valueToStringStatic(this.HaveRequest) + `,`,
+		`Complete:` + valueToStringStatic(this.Complete) + `,`,
+		`XXX_unrecognized:` + fmt.Sprintf("%v", this.XXX_unrecognized) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *StaticTransport) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&StaticTransport{`,
+		`Id:` + strings.Replace(fmt.Sprintf("%v", this.Id), "StaticId", "StaticId", 1) + `,`,
+		`Have:` + strings.Replace(fmt.Sprintf("%v", this.Have), "HaveFile", "HaveFile", 1) + `,`,
+		`HashAsk:` + strings.Replace(fmt.Sprintf("%v", this.HashAsk), "InnerHashes", "InnerHashes", 1) + `,`,
+		`HashSend:` + strings.Replace(fmt.Sprintf("%v", this.HashSend), "InnerHashes", "InnerHashes", 1) + `,`,
+		`DataAsk:` + strings.Replace(fmt.Sprintf("%v", this.DataAsk), "FileData", "FileData", 1) + `,`,
+		`DataSend:` + strings.Replace(fmt.Sprintf("%v", this.DataSend), "FileData", "FileData", 1) + `,`,
 		`XXX_unrecognized:` + fmt.Sprintf("%v", this.XXX_unrecognized) + `,`,
 		`}`,
 	}, "")
@@ -158,6 +733,93 @@ func (m *StaticId) Size() (n int) {
 	l = len(m.Hash)
 	n += 1 + l + sovStatic(uint64(l))
 	n += 1 + sovStatic(uint64(m.Length))
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+func (m *InnerHashes) Size() (n int) {
+	var l int
+	_ = l
+	n += 1 + sovStatic(uint64(uint32(m.Height)))
+	n += 1 + sovStatic(uint64(uint32(m.From)))
+	if m.Length != nil {
+		n += 1 + sovStatic(uint64(uint32(*m.Length)))
+	}
+	if m.Hashes != nil {
+		l = len(m.Hashes)
+		n += 1 + l + sovStatic(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+func (m *FileData) Size() (n int) {
+	var l int
+	_ = l
+	n += 1 + sovStatic(uint64(m.From))
+	if m.Length != nil {
+		n += 1 + sovStatic(uint64(uint32(*m.Length)))
+	}
+	if m.Data != nil {
+		l = len(m.Data)
+		n += 1 + l + sovStatic(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+func (m *HaveFile) Size() (n int) {
+	var l int
+	_ = l
+	if m.HaveRequest != nil {
+		n += 2
+	}
+	if m.Complete != nil {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+func (m *StaticTransport) Size() (n int) {
+	var l int
+	_ = l
+	if m.Id != nil {
+		l = m.Id.Size()
+		n += 1 + l + sovStatic(uint64(l))
+	}
+	if m.Have != nil {
+		l = m.Have.Size()
+		n += 1 + l + sovStatic(uint64(l))
+	}
+	if len(m.HashAsk) > 0 {
+		for _, e := range m.HashAsk {
+			l = e.Size()
+			n += 1 + l + sovStatic(uint64(l))
+		}
+	}
+	if len(m.HashSend) > 0 {
+		for _, e := range m.HashSend {
+			l = e.Size()
+			n += 1 + l + sovStatic(uint64(l))
+		}
+	}
+	if len(m.DataAsk) > 0 {
+		for _, e := range m.DataAsk {
+			l = e.Size()
+			n += 1 + l + sovStatic(uint64(l))
+		}
+	}
+	if len(m.DataSend) > 0 {
+		for _, e := range m.DataSend {
+			l = e.Size()
+			n += 1 + l + sovStatic(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -204,6 +866,205 @@ func (m *StaticId) MarshalTo(data []byte) (n int, err error) {
 	}
 	return i, nil
 }
+func (m *InnerHashes) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *InnerHashes) MarshalTo(data []byte) (n int, err error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0x8
+	i++
+	i = encodeVarintStatic(data, i, uint64(uint32(m.Height)))
+	data[i] = 0x10
+	i++
+	i = encodeVarintStatic(data, i, uint64(uint32(m.From)))
+	if m.Length != nil {
+		data[i] = 0x18
+		i++
+		i = encodeVarintStatic(data, i, uint64(uint32(*m.Length)))
+	}
+	if m.Hashes != nil {
+		data[i] = 0x42
+		i++
+		i = encodeVarintStatic(data, i, uint64(len(m.Hashes)))
+		i += copy(data[i:], m.Hashes)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(data[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+func (m *FileData) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *FileData) MarshalTo(data []byte) (n int, err error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	data[i] = 0x10
+	i++
+	i = encodeVarintStatic(data, i, uint64(m.From))
+	if m.Length != nil {
+		data[i] = 0x18
+		i++
+		i = encodeVarintStatic(data, i, uint64(uint32(*m.Length)))
+	}
+	if m.Data != nil {
+		data[i] = 0x42
+		i++
+		i = encodeVarintStatic(data, i, uint64(len(m.Data)))
+		i += copy(data[i:], m.Data)
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(data[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+func (m *HaveFile) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *HaveFile) MarshalTo(data []byte) (n int, err error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.HaveRequest != nil {
+		data[i] = 0x8
+		i++
+		if *m.HaveRequest {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.Complete != nil {
+		data[i] = 0x10
+		i++
+		if *m.Complete {
+			data[i] = 1
+		} else {
+			data[i] = 0
+		}
+		i++
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(data[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
+func (m *StaticTransport) Marshal() (data []byte, err error) {
+	size := m.Size()
+	data = make([]byte, size)
+	n, err := m.MarshalTo(data)
+	if err != nil {
+		return nil, err
+	}
+	return data[:n], nil
+}
+
+func (m *StaticTransport) MarshalTo(data []byte) (n int, err error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	if m.Id != nil {
+		data[i] = 0xa
+		i++
+		i = encodeVarintStatic(data, i, uint64(m.Id.Size()))
+		n1, err := m.Id.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n1
+	}
+	if m.Have != nil {
+		data[i] = 0x12
+		i++
+		i = encodeVarintStatic(data, i, uint64(m.Have.Size()))
+		n2, err := m.Have.MarshalTo(data[i:])
+		if err != nil {
+			return 0, err
+		}
+		i += n2
+	}
+	if len(m.HashAsk) > 0 {
+		for _, msg := range m.HashAsk {
+			data[i] = 0x22
+			i++
+			i = encodeVarintStatic(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.HashSend) > 0 {
+		for _, msg := range m.HashSend {
+			data[i] = 0x2a
+			i++
+			i = encodeVarintStatic(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.DataAsk) > 0 {
+		for _, msg := range m.DataAsk {
+			data[i] = 0x32
+			i++
+			i = encodeVarintStatic(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if len(m.DataSend) > 0 {
+		for _, msg := range m.DataSend {
+			data[i] = 0x3a
+			i++
+			i = encodeVarintStatic(data, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(data[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		i += copy(data[i:], m.XXX_unrecognized)
+	}
+	return i, nil
+}
 func encodeFixed64Static(data []byte, offset int, v uint64) int {
 	data[offset] = uint8(v)
 	data[offset+1] = uint8(v >> 8)
@@ -236,6 +1097,34 @@ func (this *StaticId) GoString() string {
 		return "nil"
 	}
 	s := strings1.Join([]string{`&pb.StaticId{` + `Hash:` + fmt1.Sprintf("%#v", this.Hash), `Length:` + fmt1.Sprintf("%#v", this.Length), `XXX_unrecognized:` + fmt1.Sprintf("%#v", this.XXX_unrecognized) + `}`}, ", ")
+	return s
+}
+func (this *InnerHashes) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings1.Join([]string{`&pb.InnerHashes{` + `Height:` + fmt1.Sprintf("%#v", this.Height), `From:` + fmt1.Sprintf("%#v", this.From), `Length:` + valueToGoStringStatic(this.Length, "int32"), `Hashes:` + valueToGoStringStatic(this.Hashes, "byte"), `XXX_unrecognized:` + fmt1.Sprintf("%#v", this.XXX_unrecognized) + `}`}, ", ")
+	return s
+}
+func (this *FileData) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings1.Join([]string{`&pb.FileData{` + `From:` + fmt1.Sprintf("%#v", this.From), `Length:` + valueToGoStringStatic(this.Length, "int32"), `Data:` + valueToGoStringStatic(this.Data, "byte"), `XXX_unrecognized:` + fmt1.Sprintf("%#v", this.XXX_unrecognized) + `}`}, ", ")
+	return s
+}
+func (this *HaveFile) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings1.Join([]string{`&pb.HaveFile{` + `HaveRequest:` + valueToGoStringStatic(this.HaveRequest, "bool"), `Complete:` + valueToGoStringStatic(this.Complete, "bool"), `XXX_unrecognized:` + fmt1.Sprintf("%#v", this.XXX_unrecognized) + `}`}, ", ")
+	return s
+}
+func (this *StaticTransport) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings1.Join([]string{`&pb.StaticTransport{` + `Id:` + fmt1.Sprintf("%#v", this.Id), `Have:` + fmt1.Sprintf("%#v", this.Have), `HashAsk:` + fmt1.Sprintf("%#v", this.HashAsk), `HashSend:` + fmt1.Sprintf("%#v", this.HashSend), `DataAsk:` + fmt1.Sprintf("%#v", this.DataAsk), `DataSend:` + fmt1.Sprintf("%#v", this.DataSend), `XXX_unrecognized:` + fmt1.Sprintf("%#v", this.XXX_unrecognized) + `}`}, ", ")
 	return s
 }
 func valueToGoStringStatic(v interface{}, typ string) string {
@@ -293,6 +1182,164 @@ func NewStaticIdFromFace(that StaticIdFace) *StaticId {
 	return this
 }
 
+type InnerHashesFace interface {
+	Proto() code_google_com_p_gogoprotobuf_proto2.Message
+	GetHeight() int32
+	GetFrom() int32
+	GetLength() *int32
+	GetHashes() []byte
+}
+
+func (this *InnerHashes) Proto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return this
+}
+
+func (this *InnerHashes) TestProto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return NewInnerHashesFromFace(this)
+}
+
+func (this *InnerHashes) GetHeight() int32 {
+	return this.Height
+}
+
+func (this *InnerHashes) GetFrom() int32 {
+	return this.From
+}
+
+func (this *InnerHashes) GetLength() *int32 {
+	return this.Length
+}
+
+func (this *InnerHashes) GetHashes() []byte {
+	return this.Hashes
+}
+
+func NewInnerHashesFromFace(that InnerHashesFace) *InnerHashes {
+	this := &InnerHashes{}
+	this.Height = that.GetHeight()
+	this.From = that.GetFrom()
+	this.Length = that.GetLength()
+	this.Hashes = that.GetHashes()
+	return this
+}
+
+type FileDataFace interface {
+	Proto() code_google_com_p_gogoprotobuf_proto2.Message
+	GetFrom() int64
+	GetLength() *int32
+	GetData() []byte
+}
+
+func (this *FileData) Proto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return this
+}
+
+func (this *FileData) TestProto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return NewFileDataFromFace(this)
+}
+
+func (this *FileData) GetFrom() int64 {
+	return this.From
+}
+
+func (this *FileData) GetLength() *int32 {
+	return this.Length
+}
+
+func (this *FileData) GetData() []byte {
+	return this.Data
+}
+
+func NewFileDataFromFace(that FileDataFace) *FileData {
+	this := &FileData{}
+	this.From = that.GetFrom()
+	this.Length = that.GetLength()
+	this.Data = that.GetData()
+	return this
+}
+
+type HaveFileFace interface {
+	Proto() code_google_com_p_gogoprotobuf_proto2.Message
+	GetHaveRequest() *bool
+	GetComplete() *bool
+}
+
+func (this *HaveFile) Proto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return this
+}
+
+func (this *HaveFile) TestProto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return NewHaveFileFromFace(this)
+}
+
+func (this *HaveFile) GetHaveRequest() *bool {
+	return this.HaveRequest
+}
+
+func (this *HaveFile) GetComplete() *bool {
+	return this.Complete
+}
+
+func NewHaveFileFromFace(that HaveFileFace) *HaveFile {
+	this := &HaveFile{}
+	this.HaveRequest = that.GetHaveRequest()
+	this.Complete = that.GetComplete()
+	return this
+}
+
+type StaticTransportFace interface {
+	Proto() code_google_com_p_gogoprotobuf_proto2.Message
+	GetId() *StaticId
+	GetHave() *HaveFile
+	GetHashAsk() []*InnerHashes
+	GetHashSend() []*InnerHashes
+	GetDataAsk() []*FileData
+	GetDataSend() []*FileData
+}
+
+func (this *StaticTransport) Proto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return this
+}
+
+func (this *StaticTransport) TestProto() code_google_com_p_gogoprotobuf_proto2.Message {
+	return NewStaticTransportFromFace(this)
+}
+
+func (this *StaticTransport) GetId() *StaticId {
+	return this.Id
+}
+
+func (this *StaticTransport) GetHave() *HaveFile {
+	return this.Have
+}
+
+func (this *StaticTransport) GetHashAsk() []*InnerHashes {
+	return this.HashAsk
+}
+
+func (this *StaticTransport) GetHashSend() []*InnerHashes {
+	return this.HashSend
+}
+
+func (this *StaticTransport) GetDataAsk() []*FileData {
+	return this.DataAsk
+}
+
+func (this *StaticTransport) GetDataSend() []*FileData {
+	return this.DataSend
+}
+
+func NewStaticTransportFromFace(that StaticTransportFace) *StaticTransport {
+	this := &StaticTransport{}
+	this.Id = that.GetId()
+	this.Have = that.GetHave()
+	this.HashAsk = that.GetHashAsk()
+	this.HashSend = that.GetHashSend()
+	this.DataAsk = that.GetDataAsk()
+	this.DataSend = that.GetDataSend()
+	return this
+}
+
 func (this *StaticId) Equal(that interface{}) bool {
 	if that == nil {
 		if this == nil {
@@ -318,6 +1365,195 @@ func (this *StaticId) Equal(that interface{}) bool {
 	}
 	if this.Length != that1.Length {
 		return false
+	}
+	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
+		return false
+	}
+	return true
+}
+func (this *InnerHashes) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*InnerHashes)
+	if !ok {
+		return false
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.Height != that1.Height {
+		return false
+	}
+	if this.From != that1.From {
+		return false
+	}
+	if this.Length != nil && that1.Length != nil {
+		if *this.Length != *that1.Length {
+			return false
+		}
+	} else if this.Length != nil {
+		return false
+	} else if that1.Length != nil {
+		return false
+	}
+	if !bytes.Equal(this.Hashes, that1.Hashes) {
+		return false
+	}
+	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
+		return false
+	}
+	return true
+}
+func (this *FileData) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*FileData)
+	if !ok {
+		return false
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.From != that1.From {
+		return false
+	}
+	if this.Length != nil && that1.Length != nil {
+		if *this.Length != *that1.Length {
+			return false
+		}
+	} else if this.Length != nil {
+		return false
+	} else if that1.Length != nil {
+		return false
+	}
+	if !bytes.Equal(this.Data, that1.Data) {
+		return false
+	}
+	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
+		return false
+	}
+	return true
+}
+func (this *HaveFile) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*HaveFile)
+	if !ok {
+		return false
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if this.HaveRequest != nil && that1.HaveRequest != nil {
+		if *this.HaveRequest != *that1.HaveRequest {
+			return false
+		}
+	} else if this.HaveRequest != nil {
+		return false
+	} else if that1.HaveRequest != nil {
+		return false
+	}
+	if this.Complete != nil && that1.Complete != nil {
+		if *this.Complete != *that1.Complete {
+			return false
+		}
+	} else if this.Complete != nil {
+		return false
+	} else if that1.Complete != nil {
+		return false
+	}
+	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
+		return false
+	}
+	return true
+}
+func (this *StaticTransport) Equal(that interface{}) bool {
+	if that == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	}
+
+	that1, ok := that.(*StaticTransport)
+	if !ok {
+		return false
+	}
+	if that1 == nil {
+		if this == nil {
+			return true
+		}
+		return false
+	} else if this == nil {
+		return false
+	}
+	if !this.Id.Equal(that1.Id) {
+		return false
+	}
+	if !this.Have.Equal(that1.Have) {
+		return false
+	}
+	if len(this.HashAsk) != len(that1.HashAsk) {
+		return false
+	}
+	for i := range this.HashAsk {
+		if !this.HashAsk[i].Equal(that1.HashAsk[i]) {
+			return false
+		}
+	}
+	if len(this.HashSend) != len(that1.HashSend) {
+		return false
+	}
+	for i := range this.HashSend {
+		if !this.HashSend[i].Equal(that1.HashSend[i]) {
+			return false
+		}
+	}
+	if len(this.DataAsk) != len(that1.DataAsk) {
+		return false
+	}
+	for i := range this.DataAsk {
+		if !this.DataAsk[i].Equal(that1.DataAsk[i]) {
+			return false
+		}
+	}
+	if len(this.DataSend) != len(that1.DataSend) {
+		return false
+	}
+	for i := range this.DataSend {
+		if !this.DataSend[i].Equal(that1.DataSend[i]) {
+			return false
+		}
 	}
 	if !bytes.Equal(this.XXX_unrecognized, that1.XXX_unrecognized) {
 		return false

@@ -20,3 +20,31 @@ message StaticId {
 	required bytes hash = 1 [(gogoproto.nullable) = false];
 	required int64 length = 2 [(gogoproto.nullable) = false];
 }
+
+message InnerHashes{
+	required int32 height = 1 [(gogoproto.nullable) = false]; //height from 0 for leaf hashes
+	required int32 from = 2 [(gogoproto.nullable) = false]; //index from left in this height
+	optional int32 length = 3 ;//only used for ask, else 0
+	optional bytes hashes = 8 ;//only used for send, else empty
+}
+
+message FileData{
+	required int64 from = 2 [(gogoproto.nullable) = false]; //start of data in bytes
+	optional int32 length = 3;//only used for ask (send bytes self encodes length)
+	optional bytes data = 8;//only used for send
+}
+
+message HaveFile{
+	optional bool have_request = 1;//asks if server have the file or not
+	optional bool complete = 2;//says if the server have the file
+	//todo: partial have lists
+}
+
+message StaticTransport{
+	optional StaticId id = 1;
+	optional HaveFile have = 2;//always put a have_request there, so you can at least get not complete back
+	repeated InnerHashes hash_ask = 4;
+	repeated InnerHashes hash_send = 5;
+	repeated FileData data_ask = 6;
+	repeated FileData data_send = 7;
+}
