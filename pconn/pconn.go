@@ -28,6 +28,13 @@ import (
 //PConn is a generic network connection that preserves message boundaries, so
 //that users don't need to worry about separating data in a stream.
 //One Send function call will be matched by one Receive on the other end.
+//Think of it as an lossless* udp with unlimited^ packet size.
+//
+// (*) Lossless as in tcp if the underlying transport or PConn's internal logic makes so.
+// Otherwise the implimentation must make it clear. Also, no transport can guarantee
+// end user processing. App level acknowledgement is still necessary.
+//
+// (^) limited by MaxMsgLength
 //
 //Use SendBytes and ReceiveBytes for a []byte interface
 //
@@ -42,13 +49,13 @@ type PConn interface {
 	//Sender may re-return an old writer, previously closed, to send a new message.
 	//
 	//Error Condtitions: those from net.Conn Write.
-	//A good default error handling strategy is to close the connection (not the sender).
+	//A good default error handling strategy is to close the connection (the PConn, not the sender).
 	Sender() io.WriteCloser
 
-	//Receive receives a message as a reader. read EOF is the end of message.
-	//Receive may block, or return reader like a future.
+	//Receiver receives a message as a reader. read EOF is the end of message.
+	//Receiver may block, or return reader like a future.
 	//
-	//Unless supported, Receive should not be called again untill read report EOF. ReceiveInWriter
+	//Unless supported, Receiver should not be called again untill read report EOF. ReceiveInWriter
 	//and ReceiveBytes does this for you by blocking.
 	//
 	//All Errors are reported by read. Any error, other then EOF means all actions
