@@ -3,7 +3,9 @@ Fensan
 
 Global Dispersed Data Cache Store.
 
-This project is in it's conception. It is an evolution of [bitX](https://github.com/xiegeo/bitX), which stuck after I found myself off in a tangent. Some code reuse will accure, easier than throwing away bad code.
+This project is not active and not usable, it does include some interesting design documents.
+
+It is an evolution of [bitX](https://github.com/xiegeo/bitX), which stuck after I found myself off in a tangent. Some code reuse will accure, easier than throwing away bad code.
 
 You want to read more if you are internist in novel ways of putting together well know technics in cloud storage, file sharing, crytography, and distributed computing; or spark for an idea that could complement or simplify and exiting systems; and perhaps contribute to Fensan.
 
